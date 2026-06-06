@@ -1,1177 +1,570 @@
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged }
-from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+    
+  // Configuración de Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyCQZc42suWda4uAa35C7Z8hgoStFmn9Rrs",
+    authDomain: "adrianshop-c50bb.firebaseapp.com",
+    projectId: "adrianshop-c50bb",
+    storageBucket: "adrianshop-c50bb.firebasestorage.app",
+    messagingSenderId: "323803301457",
+    appId: "1:323803301457:web:f64a7a1afad3c8b07f9a70"
+  };
 
-import {
-  getFirestore,
-  doc,
-  getDoc,
-  setDoc
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
-  
-const firebaseConfig = {
-  apiKey: "AIzaSyCQZc42suWda4uAa35C7Z8hgoStFmn9Rrs",
-  authDomain: "adrianshop-c50bb.firebaseapp.com",
-  projectId: "adrianshop-c50bb",
-  storageBucket: "adrianshop-c50bb.firebasestorage.app",
-  messagingSenderId: "323803301457",
-  appId: "1:323803301457:web:f64a7a1afad3c8b07f9a70"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
-
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
   const db = getFirestore(app);
 
-window.firebaseDB = db;
-window.firebaseDoc = doc;
-window.firebaseGetDoc = getDoc;
-window.firebaseSetDoc = setDoc;
+  // Teléfono del vendedor y selectores helpers
+  const sellerPhone = "525542910238";
+  const byId = (id) => document.getElementById(id);
+  const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 });
 
-window.firebaseAuth = auth;
-window.firebaseProvider = provider;
-window.firebaseSignIn = signInWithPopup;
-window.firebaseOnAuthStateChanged = onAuthStateChanged;
-</script>
+  // Productos por defecto si la base de datos está vacía
+  const defaultProducts = [
+    { id: 1, name: "Laptop ultraligera 14 pulgadas", category: "Tecnologia", price: 14999, oldPrice: 17999, rating: 4.8, description: "Laptop premium con 16 GB RAM, SSD 512 GB...", badge: "Oferta", image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=800&q=85", gallery: [] },
+    { id: 2, name: "Audifonos inalambricos premium", category: "Tecnologia", price: 1299, oldPrice: 1899, rating: 4.7, description: "Audifonos con cancelacion de ruido...", badge: "Top ventas", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=85", gallery: [] }
+  ];
 
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Mercado Nova Premium</title>
-  <style>
-    :root {
-      --navy: #071a33;
-      --navy-2: #0f2e53;
-      --navy-3: #173e6c;
-      --gold: #b8860b;
-      --gold-2: #c99a2e;
-      --gold-3: #8f6508;
-      --bg: #f4f6fa;
-      --surface: #ffffff;
-      --soft: #eef2f7;
-      --text: #142033;
-      --muted: #687386;
-      --line: #dfe5ee;
-      --success: #167a3a;
-      --danger: #b5471b;
-      --shadow: 0 16px 38px rgba(7, 26, 51, 0.13);
-      --radius: 8px;
+  // Estado de la aplicación centralizado
+  const state = {
+    products: [],
+    users: {}, // Caché local de usuarios para reseñas
+    currentEmail: "",
+    category: "Todos",
+    query: "",
+    cart: [],
+    detailProductId: null,
+    detailPurchaseId: null
+  };
+
+  // --- COMPONENTE: Sincronización con Firebase Firestore ---
+
+  async function saveProductsToCloud() {
+    try {
+      await setDoc(doc(db, "store", "products"), { items: state.products });
+      showToast("Catálogo actualizado en la nube");
+    } catch (error) {
+      console.error("Error al guardar productos:", error);
+      showToast("Error al guardar en la nube");
     }
+  }
 
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-    }
-
-    button, input, textarea, select { font: inherit; }
-    button { cursor: pointer; }
-    img { max-width: 100%; }
-
-    .topbar {
-      position: sticky;
-      top: 0;
-      z-index: 30;
-      background: var(--navy);
-      color: #fff;
-      box-shadow: 0 10px 26px rgba(7, 26, 51, 0.28);
-    }
-
-    .topbar-inner {
-      width: min(1180px, calc(100% - 32px));
-      margin: 0 auto;
-      min-height: 74px;
-      display: grid;
-      grid-template-columns: auto minmax(220px, 1fr) auto auto auto;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 950;
-      white-space: nowrap;
-    }
-
-    .brand-mark {
-      width: 40px;
-      height: 40px;
-      display: grid;
-      place-items: center;
-      border-radius: var(--radius);
-      color: #fff;
-      background: linear-gradient(135deg, var(--gold-2), var(--gold-3));
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
-    }
-
-    .search {
-      display: flex;
-      min-width: 0;
-      overflow: hidden;
-      border-radius: var(--radius);
-      border: 2px solid rgba(184, 134, 11, 0.34);
-      background: #fff;
-    }
-
-    .search input {
-      flex: 1;
-      min-width: 0;
-      border: 0;
-      outline: 0;
-      padding: 13px 14px;
-      color: var(--text);
-    }
-
-    .search button,
-    .primary,
-    .checkout,
-    .submit {
-      border: 0;
-      background: linear-gradient(135deg, var(--gold-2), var(--gold));
-      color: #111827;
-      font-weight: 950;
-    }
-
-    .search button { width: 54px; }
-
-    .pill {
-      min-height: 40px;
-      border: 1px solid rgba(184, 134, 11, 0.44);
-      color: #fff;
-      background: rgba(255, 255, 255, 0.07);
-      border-radius: 999px;
-      padding: 9px 12px;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      white-space: nowrap;
-      font-weight: 800;
-    }
-
-    .hero {
-      background:
-        linear-gradient(130deg, rgba(7, 26, 51, 0.97), rgba(15, 46, 83, 0.92)),
-        url("https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1600&q=85") center / cover;
-      color: #fff;
-      border-bottom: 4px solid var(--gold);
-    }
-
-    .hero-inner {
-      width: min(1180px, calc(100% - 32px));
-      min-height: 330px;
-      margin: 0 auto;
-      padding: 34px 0 28px;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 340px;
-      gap: 24px;
-      align-items: end;
-    }
-
-    .hero-copy { display: grid; gap: 13px; align-content: center; }
-    .eyebrow {
-      color: #d7ab47;
-      font-weight: 950;
-      text-transform: uppercase;
-      letter-spacing: 0;
-      font-size: 0.78rem;
-    }
-
-    h1 {
-      margin: 0;
-      max-width: 780px;
-      font-size: clamp(2rem, 4vw, 3.75rem);
-      line-height: 1.03;
-    }
-
-    .hero-copy p {
-      margin: 0;
-      max-width: 690px;
-      color: #dce6f2;
-      font-size: 1.04rem;
-      line-height: 1.55;
-    }
-
-    .hero-actions, .categories, .actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .primary, .secondary, .checkout, .submit, .dark-button, .ghost-button, .danger-button {
-      min-height: 42px;
-      border-radius: var(--radius);
-      padding: 10px 14px;
-      font-weight: 950;
-    }
-
-    .secondary {
-      border: 1px solid rgba(184, 134, 11, 0.45);
-      background: rgba(255, 255, 255, 0.08);
-      color: #fff;
-    }
-
-    .deal-card {
-      overflow: hidden;
-      border-radius: var(--radius);
-      background: #fff;
-      color: var(--text);
-      box-shadow: var(--shadow);
-    }
-
-    .deal-card img { width: 100%; height: 168px; display: block; object-fit: cover; }
-    .deal-body { padding: 16px; }
-    .deal-body strong { display: block; margin-bottom: 6px; }
-    .deal-body span { color: var(--success); font-weight: 950; }
-
-    main {
-      width: min(1180px, calc(100% - 32px));
-      margin: 26px auto 46px;
-    }
-
-    .layout {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 350px;
-      gap: 22px;
-      align-items: start;
-    }
-
-    .toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 16px;
-    }
-
-    h2, h3 { margin: 0; }
-    .toolbar h2 { font-size: 1.42rem; }
-
-    .chip {
-      border: 1px solid var(--line);
-      background: #fff;
-      color: #334155;
-      border-radius: 999px;
-      padding: 9px 13px;
-      font-weight: 850;
-      white-space: nowrap;
-    }
-
-    .chip.active {
-      background: #f7edd2;
-      border-color: var(--gold);
-      color: var(--navy);
-      box-shadow: 0 4px 12px rgba(184, 134, 11, 0.18);
-    }
-
-    .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-
-    .product-card, .panel-card, .order {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: 0 9px 22px rgba(7, 26, 51, 0.06);
-    }
-
-    .product-card {
-      overflow: hidden;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      transition: transform 160ms ease, box-shadow 160ms ease;
-    }
-
-    .product-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
-    .product-image { aspect-ratio: 1.08 / 1; position: relative; overflow: hidden; background: var(--soft); }
-    .product-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-    .badge {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      border-radius: 999px;
-      padding: 6px 9px;
-      background: rgba(7, 26, 51, 0.92);
-      color: #d7ab47;
-      font-size: 0.78rem;
-      font-weight: 950;
-    }
-
-    .product-info { padding: 14px; display: grid; gap: 9px; flex: 1; }
-    .rating { color: #8a6208; font-size: 0.88rem; font-weight: 950; }
-    .product-title { font-size: 1rem; line-height: 1.35; }
-    .meta, .small { color: var(--muted); font-size: 0.88rem; line-height: 1.42; }
-    .price-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-    .price { font-size: 1.34rem; font-weight: 950; color: var(--navy); }
-    .old-price { color: var(--muted); text-decoration: line-through; font-size: 0.9rem; }
-    .shipping, .wallet-amount { color: var(--success); font-weight: 950; font-size: 0.88rem; }
-
-    .add {
-      margin-top: auto;
-      min-height: 42px;
-      width: 100%;
-      border: 0;
-      border-radius: var(--radius);
-      background: var(--navy);
-      color: #fff;
-      font-weight: 950;
-    }
-
-    .order { position: sticky; top: 94px; overflow: hidden; }
-    .order-header, .panel-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 16px;
-      border-bottom: 1px solid var(--line);
-    }
-
-    .order-list { max-height: 390px; overflow: auto; }
-    .order-item {
-      display: grid;
-      grid-template-columns: 64px minmax(0, 1fr) auto;
-      gap: 10px;
-      align-items: center;
-      padding: 14px 16px;
-      border-bottom: 1px solid var(--line);
-    }
-
-    .order-item img, .review-photo {
-      width: 64px;
-      height: 64px;
-      object-fit: cover;
-      border-radius: var(--radius);
-      background: var(--soft);
-    }
-
-    .order-name { font-weight: 950; font-size: 0.92rem; line-height: 1.28; overflow-wrap: anywhere; }
-    .order-price { color: var(--muted); font-size: 0.86rem; margin-top: 4px; }
-    .remove {
-      border: 0;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: #fff0ea;
-      color: var(--danger);
-      font-size: 1.2rem;
-      font-weight: 950;
-    }
-
-    .summary { display: grid; gap: 10px; padding: 16px; border-top: 1px solid var(--line); background: #fbfcff; }
-    .summary-row { display: flex; justify-content: space-between; gap: 12px; color: #3d4a5c; }
-    .summary-row.total { padding-top: 8px; border-top: 1px solid var(--line); color: var(--text); font-size: 1.1rem; font-weight: 950; }
-    .empty { padding: 22px 16px; color: var(--muted); line-height: 1.45; }
-
-    .account-area {
-      margin-top: 28px;
-      display: grid;
-      grid-template-columns: 360px minmax(0, 1fr);
-      gap: 18px;
-      align-items: start;
-    }
-
-    .panel-card { overflow: hidden; }
-    .panel-body { padding: 16px; display: grid; gap: 12px; }
-
-    .field { display: grid; gap: 6px; }
-    .field label { color: #334155; font-size: 0.86rem; font-weight: 950; }
-    .field input, .field textarea, .field select {
-      width: 100%;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      padding: 11px 12px;
-      background: #fff;
-      color: var(--text);
-      outline-color: var(--gold);
-    }
-
-    .field textarea { min-height: 92px; resize: vertical; }
-    .wallet-box { padding: 14px; border: 1px solid rgba(184, 134, 11, 0.42); border-radius: var(--radius); background: #f8efd7; }
-
-    .purchase-list, .review-list, .admin-list { display: grid; gap: 10px; }
-    .purchase-item, .review-item, .admin-product {
-      display: grid;
-      grid-template-columns: 70px minmax(0, 1fr) auto;
-      gap: 12px;
-      padding: 12px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: #fff;
-      align-items: center;
-    }
-
-    .purchase-item img, .admin-product img { width: 70px; height: 70px; object-fit: cover; border-radius: var(--radius); }
-    .review-item { grid-template-columns: 64px minmax(0, 1fr); align-items: start; }
-    .review-item strong, .purchase-item strong, .admin-product strong { display: block; margin-bottom: 4px; }
-
-    .modal {
-      position: fixed;
-      inset: 0;
-      z-index: 50;
-      display: none;
-      background: rgba(7, 26, 51, 0.72);
-      padding: 20px;
-      overflow: auto;
-    }
-
-    .modal.open { display: block; }
-    .modal-card {
-      width: min(980px, 100%);
-      margin: 20px auto;
-      background: #fff;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-
-    .modal-head {
-      padding: 16px;
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: center;
-      background: var(--navy);
-      color: #fff;
-    }
-
-    .modal-head span { color: #d7ab47; }
-    .detail-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; padding: 18px; }
-    .gallery-main { width: 100%; aspect-ratio: 1.25 / 1; object-fit: cover; border-radius: var(--radius); background: var(--soft); }
-    .thumbs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px; }
-    .thumbs img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: var(--radius); border: 2px solid transparent; }
-    .thumbs img.active { border-color: var(--gold); }
-    .detail-side { display: grid; gap: 12px; align-content: start; }
-    .detail-reviews { grid-column: 1 / -1; display: grid; gap: 10px; }
-
-    .admin-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 55;
-      display: none;
-      background: rgba(7, 26, 51, 0.72);
-      padding: 20px;
-      overflow: auto;
-    }
-
-    .admin-overlay.open { display: block; }
-    .admin-shell { width: min(1040px, 100%); margin: 20px auto; background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
-    .admin-title { background: var(--navy); color: #fff; padding: 18px; display: flex; justify-content: space-between; gap: 12px; align-items: center; }
-    .admin-title span { color: #d7ab47; }
-    .admin-grid { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 18px; padding: 18px; }
-    .admin-form { display: grid; gap: 10px; }
-    .admin-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-    .dark-button { border: 0; background: var(--navy); color: #fff; }
-    .ghost-button { border: 1px solid var(--line); background: #fff; color: var(--navy); }
-    .danger-button { border: 0; background: #fff0ea; color: var(--danger); }
-
-    .owner-hotspot { position: fixed; left: 0; bottom: 0; width: 18px; height: 18px; opacity: 0; z-index: 45; }
-    .toast {
-      position: fixed;
-      left: 50%;
-      bottom: 22px;
-      z-index: 70;
-      max-width: min(90vw, 460px);
-      transform: translateX(-50%) translateY(20px);
-      opacity: 0;
-      pointer-events: none;
-      background: var(--navy);
-      color: #fff;
-      padding: 12px 15px;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      text-align: center;
-      transition: opacity 160ms ease, transform 160ms ease;
-    }
-
-    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-    @media (max-width: 1000px) {
-      .hero-inner, .layout, .account-area, .admin-grid, .detail-grid { grid-template-columns: 1fr; }
-      .order { position: static; }
-      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .detail-reviews { grid-column: auto; }
-    }
-
-    @media (max-width: 720px) {
-      .topbar-inner {
-        width: min(100% - 22px, 1180px);
-        grid-template-columns: 1fr auto auto;
-        gap: 10px;
-        padding: 10px 0;
+  async function loadProductsFromCloud() {
+    try {
+      const snap = await getDoc(doc(db, "store", "products"));
+      if (snap.exists()) {
+        state.products = snap.data().items || [];
+      } else {
+        state.products = defaultProducts;
+        await saveProductsToCloud(); // Inicializa la BD si está vacía
       }
-
-      .brand span:last-child { display: none; }
-      .search { grid-column: 1 / -1; order: 5; }
-      .hero-inner, main { width: min(100% - 22px, 1180px); }
-      .hero-inner { min-height: 0; padding-top: 24px; }
-      .deal-card { display: none; }
-      .toolbar { display: grid; gap: 12px; }
-      .grid { grid-template-columns: 1fr; }
-      .product-card { display: grid; grid-template-columns: 126px minmax(0, 1fr); }
-      .product-image { aspect-ratio: auto; min-height: 190px; height: 100%; }
-      .product-info { padding: 12px; }
-      .price { font-size: 1.16rem; }
-      .pill { padding: 9px 10px; }
-      .modal, .admin-overlay { padding: 10px; }
-      .purchase-item, .admin-product { grid-template-columns: 58px minmax(0, 1fr); }
-      .purchase-item .actions, .admin-product .actions { grid-column: 1 / -1; justify-content: stretch; }
-      .purchase-item .actions button, .admin-product .actions button { flex: 1; }
+    } catch (error) {
+      console.error("Error al cargar productos:", error);
+      state.products = defaultProducts; // Fallback seguro
     }
-  </style>
-</head>
-<body>
-  <header class="topbar">
-    <div class="topbar-inner">
-      <div class="brand" aria-label="Tienda"><span class="brand-mark">M</span><span>Mercado Nova Premium</span></div>
-      <form class="search" id="searchForm">
-        <input id="searchInput" type="search" placeholder="Buscar productos premium" aria-label="Buscar productos" />
-        <button type="submit" aria-label="Buscar">⌕</button>
-      </form>
-      <button class="pill" type="button" id="accountShortcut">Cuenta</button>
-      <button class="pill" type="button" id="walletShortcut">Monedero <strong id="walletTop">$0</strong></button>
-      <button class="pill" type="button" id="cartShortcut">Carrito <strong id="cartCount">0</strong></button>
-    </div>
-  </header>
+    renderCategories();
+    renderProducts();
+    initAdminList();
+  }
 
-  <section class="hero">
-    <div class="hero-inner">
-      <div class="hero-copy">
-        <div class="eyebrow">Entrega personal · Recompensas reales</div>
-        <h1>Compra productos premium, revisa tu historial y gana saldo con tus resenas.</h1>
-        <p>Los productos se entregan en persona en un plazo de 2 a 4 dias. Por cada articulo comprado recibes una resena disponible; al publicarla con foto ganas $10 MXN para usar en la tienda.</p>
-        <div class="hero-actions">
-          <button class="primary" type="button" id="shopNow">Ver productos</button>
-          <button class="secondary" type="button" id="openInfo">Como funciona</button>
+  async function saveUserToCloud(email, data) {
+    if (!email) return;
+    try {
+      await setDoc(doc(db, "users", email.replace(/\./g, "_")), data);
+    } catch (error) {
+      console.error("Error al guardar usuario:", error);
+    }
+  }
+
+  async function loadUserFromCloud(email) {
+    if (!email) return null;
+    try {
+      const snap = await getDoc(doc(db, "users", email.replace(/\./g, "_")));
+      if (snap.exists()) {
+        return snap.data();
+      }
+    } catch (error) {
+      console.error("Error al cargar usuario:", error);
+    }
+    return { email, publicName: "Usuario Premium", wallet: 0, purchases: [], reviews: [] };
+  }
+
+  // --- LÓGICA DE CONTROLADORES Y RENDER ---
+
+  function currentUser() {
+    if (!state.currentEmail) return null;
+    return state.users[state.currentEmail] || null;
+  }
+
+  function ensureUser() {
+    const user = currentUser();
+    if (user) return user;
+    showToast("Inicia sesión para continuar");
+    byId("accountArea").scrollIntoView({ behavior: "smooth", block: "start" });
+    return null;
+  }
+
+  function showToast(message) {
+    byId("toast").textContent = message;
+    byId("toast").classList.add("show");
+    window.clearTimeout(showToast.timer);
+    showToast.timer = window.setTimeout(() => byId("toast").classList.remove("show"), 1900);
+  }
+
+  function productReviews(productId) {
+    return Object.values(state.users).flatMap((user) =>
+      (user.reviews || []).map((review) => ({ ...review, publicName: user.publicName }))
+    ).filter((review) => review.productId === productId);
+  }
+
+  function filteredProducts() {
+    return state.products.filter((product) => {
+      const matchesCategory = state.category === "Todos" || product.category === state.category;
+      const text = `${product.name} ${product.category} ${product.description}`.toLowerCase();
+      return matchesCategory && text.includes(state.query.toLowerCase());
+    });
+  }
+
+  function renderCategories() {
+    const categories = ["Todos", ...new Set(state.products.map((product) => product.category))];
+    byId("categories").innerHTML = categories.map((category) => `
+      <button class="chip ${state.category === category ? "active" : ""}" type="button" data-category="${category}">${category}</button>
+    `).join("");
+  }
+
+  function renderProducts() {
+    const items = filteredProducts();
+    byId("productGrid").innerHTML = items.length ? items.map((product) => `
+      <article class="product-card" data-open-product="${product.id}">
+        <div class="product-image">
+          ${product.badge ? `<span class="badge">${product.badge}</span>` : ""}
+          <img src="${product.image}" alt="${product.name}" />
         </div>
-      </div>
-      <article class="deal-card">
-        <img src="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=900&q=85" alt="Laptop premium sobre escritorio" />
-        <div class="deal-body">
-          <strong>Compra por WhatsApp</strong>
-          <span>Tu pedido llega directo al vendedor para coordinar entrega</span>
+        <div class="product-info">
+          <div class="rating">★ ${product.rating}</div>
+          <strong class="product-title">${product.name}</strong>
+          <div class="price-row">
+            <span class="price">${money.format(product.price)}</span>
+            ${product.oldPrice ? `<span class="old-price">${money.format(product.oldPrice)}</span>` : ""}
+          </div>
+          <span class="shipping">Entrega Personal</span>
+          <button class="add" type="button" data-add-cart="${product.id}">Agregar al pedido</button>
         </div>
       </article>
-    </div>
-  </section>
-
-  <main>
-    <div class="layout">
-      <section aria-label="Catalogo">
-        <div class="toolbar">
-          <h2>Productos recomendados</h2>
-          <div class="categories" id="categories" aria-label="Categorias"></div>
-        </div>
-        <div class="grid" id="productGrid"></div>
-      </section>
-
-      <aside class="order" id="orderPanel" aria-label="Pedido">
-        <div class="order-header"><h2>Tu pedido</h2><span id="orderStatus">Sin productos</span></div>
-        <div class="order-list" id="orderList"></div>
-        <div class="summary">
-          <div class="summary-row"><span>Subtotal</span><strong id="subtotal">$0</strong></div>
-          <div class="summary-row"><span>Entrega</span><strong>2 a 4 dias</strong></div>
-          <div class="summary-row total"><span>Total</span><strong id="total">$0</strong></div>
-          <button class="checkout" type="button" id="checkoutButton">Comprar por WhatsApp</button>
-          <div class="small">Al comprar se registra en Mis compras y se habilita una resena por articulo.</div>
-        </div>
-      </aside>
-    </div>
-
-    <section class="account-area" id="accountArea" aria-label="Cuenta y compras">
-      <div class="panel-card">
-        <div class="panel-head"><h2>Mi cuenta</h2><span id="accountStatus">Sin sesion</span></div>
-        <form class="panel-body" id="accountForm">
-          <div class="field"><label for="email">Correo electronico</label><input id="email" type="email" required placeholder="tu@email.com" /></div>
-          <div class="field"><label for="publicName">Nombre publico</label><input id="publicName" required placeholder="Como aparecera en resenas" /></div>
-          <button class="submit" type="submit">Entrar / registrarme</button>
-          <button class="ghost-button" type="button" id="googleButton">Entrar con Google</button>
-          <div class="wallet-box">
-            <strong>Monedero</strong>
-            <div class="wallet-amount" id="walletBalance">$0 MXN disponibles</div>
-            <div class="small">El saldo se guarda en esta tienda virtual junto con tus compras y resenas.</div>
-          </div>
-        </form>
-      </div>
-
-      <div class="panel-card">
-        <div class="panel-head"><h2>Mis compras</h2><span id="purchaseCount">0</span></div>
-        <div class="panel-body purchase-list" id="purchaseList"></div>
-      </div>
-    </section>
-  </main>
-
-  <section class="modal" id="productModal" aria-label="Detalle de producto">
-    <div class="modal-card">
-      <div class="modal-head">
-        <div><h2 id="detailTitle">Producto</h2><span id="detailSubtitle">Detalle premium</span></div>
-        <button class="ghost-button" type="button" id="closeProduct">Cerrar</button>
-      </div>
-      <div class="detail-grid">
-        <div>
-          <img class="gallery-main" id="detailMainImage" alt="Imagen del producto" />
-          <div class="thumbs" id="detailThumbs"></div>
-        </div>
-        <div class="detail-side">
-          <div class="rating" id="detailRating"></div>
-          <div class="price-row"><span class="price" id="detailPrice"></span><span class="old-price" id="detailOldPrice"></span></div>
-          <p class="meta" id="detailDescription"></p>
-          <button class="add" type="button" id="detailAdd">Agregar al pedido</button>
-          <form class="panel-body" id="detailReviewForm">
-            <h3>Dejar resena</h3>
-            <div class="small" id="reviewHint">Esta opcion aparece cuando compras este producto.</div>
-            <div class="field"><label for="detailReviewText">Comentario</label><textarea id="detailReviewText" required></textarea></div>
-            <div class="field"><label for="detailReviewPhoto">Foto del producto</label><input id="detailReviewPhoto" type="file" accept="image/*" required /></div>
-            <button class="submit" type="submit">Publicar y ganar $10</button>
-          </form>
-        </div>
-        <div class="detail-reviews">
-          <h3>Fotos y comentarios de compradores</h3>
-          <div class="review-list" id="detailReviews"></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="modal" id="infoModal" aria-label="Informacion de compra">
-    <div class="modal-card">
-      <div class="modal-head">
-        <div><h2>Antes de comprar</h2><span>Entrega y recompensas</span></div>
-        <button class="ghost-button" type="button" id="closeInfo">Cerrar</button>
-      </div>
-      <div class="panel-body">
-        <p>Los productos se entregan en persona en un plazo de 2 a 4 dias.</p>
-        <p>Por cada articulo comprado obtienes una resena disponible. Cuando publiques esa resena con foto desde Mis compras, tu monedero suma $10 MXN para usar en futuras compras.</p>
-        <p>Al presionar Comprar por WhatsApp se abrira un mensaje listo para enviar al vendedor al numero 5542910238.</p>
-        <button class="submit" type="button" id="acceptInfo">Entendido</button>
-      </div>
-    </div>
-  </section>
-
-  <button class="owner-hotspot" id="ownerHotspot" type="button" aria-label="Acceso privado"></button>
-
-  <section class="admin-overlay" id="adminOverlay" aria-label="Panel privado">
-    <div class="admin-shell">
-      <div class="admin-title">
-        <div><h2>Panel privado del propietario</h2><span>Agregar, editar o quitar productos del catalogo</span></div>
-        <button class="ghost-button" type="button" id="closeAdmin">Cerrar</button>
-      </div>
-      <div class="admin-grid">
-        <form class="admin-form" id="productForm">
-          <input type="hidden" id="productId" />
-          <div class="field"><label for="productName">Nombre</label><input id="productName" required /></div>
-          <div class="field"><label for="productCategory">Categoria</label><input id="productCategory" required /></div>
-          <div class="field"><label for="productPrice">Precio MXN</label><input id="productPrice" type="number" min="1" step="1" required /></div>
-          <div class="field"><label for="productOldPrice">Precio anterior MXN</label><input id="productOldPrice" type="number" min="1" step="1" /></div>
-          <div class="field"><label for="productRating">Calificacion</label><input id="productRating" type="number" min="1" max="5" step="0.1" required /></div>
-          <div class="field"><label for="productBadge">Etiqueta</label><input id="productBadge" placeholder="Oferta, Nuevo, Top ventas" /></div>
-          <div class="field"><label for="productDescription">Descripcion detallada</label><textarea id="productDescription" required></textarea></div>
-          <div class="field"><label for="productImage">Imagen principal</label><input id="productImage" required placeholder="https://..." /></div>
-          <div class="field"><label for="productGallery">Galeria del propietario</label><textarea id="productGallery" placeholder="Una URL por linea"></textarea></div>
-          <div class="admin-actions">
-            <button class="dark-button" type="submit">Guardar producto</button>
-            <button class="ghost-button" type="button" id="resetProductForm">Nuevo producto</button>
-          </div>
-        </form>
-        <div class="admin-list" id="adminList"></div>
-      </div>
-    </div>
-  </section>
-
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
-
-  <script>
-    const defaultProducts = [
-      { id: 1, name: "Laptop ultraligera 14 pulgadas", category: "Tecnologia", price: 14999, oldPrice: 17999, rating: 4.8, description: "Laptop premium con 16 GB RAM, SSD 512 GB, cuerpo metalico, pantalla nitida y rendimiento ideal para trabajo, estudio y creacion de contenido.", badge: "Oferta", image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=800&q=85", gallery: ["https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=900&q=85", "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=85"] },
-      { id: 2, name: "Audifonos inalambricos premium", category: "Tecnologia", price: 1299, oldPrice: 1899, rating: 4.7, description: "Audifonos con cancelacion de ruido, estuche de carga, audio envolvente y diseno comodo para usarlos por horas.", badge: "Top ventas", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=85", gallery: ["https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=900&q=85", "https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&w=900&q=85"] },
-      { id: 3, name: "Smartwatch deportivo resistente", category: "Tecnologia", price: 2199, oldPrice: 2699, rating: 4.6, description: "Reloj inteligente con GPS, monitoreo cardiaco, resistencia al agua, bateria extendida y modos deportivos.", badge: "Nuevo", image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=85", gallery: ["https://images.unsplash.com/photo-1579586337278-3befd40fd17a?auto=format&fit=crop&w=900&q=85"] },
-      { id: 4, name: "Cafetera espresso compacta", category: "Hogar", price: 3499, oldPrice: 4199, rating: 4.9, description: "Cafetera de 15 bares con acabado elegante, tamano compacto y preparacion rapida para espresso, americano y capuchino.", badge: "Envio gratis", image: "https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?auto=format&fit=crop&w=800&q=85", gallery: ["https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=85"] },
-      { id: 5, name: "Silla ergonomica ejecutiva", category: "Hogar", price: 2899, oldPrice: 3599, rating: 4.5, description: "Silla de oficina con soporte lumbar, altura ajustable, respaldo comodo y diseno sobrio para espacios premium.", badge: "Premium", image: "https://images.unsplash.com/photo-1580480055273-228ff5388ef8?auto=format&fit=crop&w=800&q=85", gallery: ["https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&w=900&q=85"] },
-      { id: 6, name: "Mochila urbana impermeable", category: "Moda", price: 899, oldPrice: 1199, rating: 4.6, description: "Mochila resistente al agua con espacio para laptop, organizadores internos y estilo minimalista para uso diario.", badge: "Popular", image: "https://images.unsplash.com/photo-1622560480605-d83c853bc5c3?auto=format&fit=crop&w=800&q=85", gallery: ["https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=900&q=85"] }
-    ];
-
- const storage = {
-  products: "novaProductsV4",
-  user: "novaCurrentUserV4",
-  users: "novaUsersV4",
-  infoSeen: "novaInfoSeenV4"
-};
-
-async function saveProductsToCloud() {
-  await firebaseSetDoc(
-    firebaseDoc(firebaseDB, "store", "products"),
-    { items: state.products }
-  );
-}
-
-async function loadProductsFromCloud() {
-  const snap = await firebaseGetDoc(
-    firebaseDoc(firebaseDB, "store", "products")
-  );
-
-  if (snap.exists()) {
-    state.products = snap.data().items || [];
+    `).join("") : `<div class="empty">No se encontraron productos premium.</div>`;
   }
-}
 
-    const sellerPhone = "525542910238";
-    const byId = (id) => document.getElementById(id);
-    const read = (key, fallback) => {
-      try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
-      catch { return fallback; }
-    };
-    const write = (key, value) => localStorage.setItem(key, JSON.stringify(value));
-    const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 });
+  function updateInterface() {
+    const user = currentUser();
+    if (user) {
+      byId("accountStatus").textContent = "Sesión activa";
+      byId("email").value = user.email;
+      byId("email").disabled = true;
+      byId("publicName").value = user.publicName;
+      byId("walletTop").textContent = money.format(user.wallet);
+      byId("walletBalance").textContent = `${money.format(user.wallet)} MXN disponibles`;
+      byId("purchaseCount").textContent = user.purchases.length;
+      renderPurchases(user);
+    } else {
+      byId("accountStatus").textContent = "Sin sesión";
+      byId("email").value = "";
+      byId("email").disabled = false;
+      byId("publicName").value = "";
+      byId("walletTop").textContent = "$0";
+      byId("walletBalance").textContent = "$0 MXN disponibles";
+      byId("purchaseCount").textContent = "0";
+      byId("purchaseList").innerHTML = `<div class="empty">Inicia sesión para ver tus compras.</div>`;
+    }
+    renderCart();
+  }
 
-    const state = {
-      products: read(storage.products, defaultProducts),
-      users: read(storage.users, {}),
-      currentEmail: read(storage.user, ""),
-      category: "Todos",
-      query: "",
-      cart: [],
-      detailProductId: null,
-      detailPurchaseId: null
-    };
+  function renderPurchases(user) {
+    const list = user.purchases || [];
+    byId("purchaseList").innerHTML = list.length ? list.map((p) => {
+      const prod = state.products.find(x => x.id === p.productId);
+      if (!prod) return "";
+      const yaRevisado = user.reviews.some(r => r.purchaseId === p.purchaseId);
+      return `
+        <div class="purchase-item">
+          <img src="${prod.image}" alt="${prod.name}">
+          <div>
+            <strong>${prod.name}</strong>
+            <span class="small">F. Compra: ${p.date}</span>
+          </div>
+          <div class="actions">
+            ${yaRevisado 
+              ? `<span class="shipping">Reseña enviada (+$10)</span>` 
+              : `<button class="primary" type="button" data-review-prod="${prod.id}" data-review-pur="${p.purchaseId}">Dejar Reseña</button>`
+            }
+          </div>
+        </div>
+      `;
+    }).join("") : `<div class="empty">Aún no tienes compras registradas.</div>`;
+  }
 
-    function currentUser() {
-      if (!state.currentEmail) return null;
-      return state.users[state.currentEmail] || null;
+  function renderCart() {
+    byId("cartCount").textContent = state.cart.length;
+    if (!state.cart.length) {
+      byId("orderStatus").textContent = "Sin productos";
+      byId("orderList").innerHTML = `<div class="empty">El carrito está vacío. Agrega productos premium de nuestro catálogo.</div>`;
+      byId("subtotal").textContent = "$0";
+      byId("total").textContent = "$0";
+      return;
+    }
+    byId("orderStatus").textContent = `${state.cart.length} artículo(s)`;
+    let subtotal = 0;
+    byId("orderList").innerHTML = state.cart.map((item, index) => {
+      subtotal += item.price;
+      return `
+        <div class="order-item">
+          <img src="${item.image}" alt="${item.name}">
+          <div>
+            <div class="order-name">${item.name}</div>
+            <div class="order-price">${money.format(item.price)}</div>
+          </div>
+          <button class="remove" type="button" data-remove-index="${index}">×</button>
+        </div>
+      `;
+    }).join("");
+    byId("subtotal").textContent = money.format(subtotal);
+    byId("total").textContent = money.format(subtotal);
+  }
+
+  // --- DETALLE DE PRODUCTO Y MODAL ---
+  function openProductModal(id, preferredPurchaseId = null) {
+    const product = state.products.find(p => p.id === parseInt(id));
+    if (!product) return;
+    state.detailProductId = product.id;
+    state.detailPurchaseId = preferredPurchaseId;
+
+    byId("detailTitle").textContent = product.name;
+    byId("detailSubtitle").textContent = product.category;
+    byId("detailMainImage").src = product.image;
+    byId("detailPrice").textContent = money.format(product.price);
+    byId("detailOldPrice").textContent = product.oldPrice ? money.format(product.oldPrice) : "";
+    byId("detailDescription").textContent = product.description;
+    byId("detailRating").textContent = `★ ${product.rating}`;
+
+    // Render Miniaturas
+    const gallery = [product.image, ...(product.gallery || [])];
+    byId("detailThumbs").innerHTML = gallery.map((img, i) => `
+      <img src="${img}" class="${i === 0 ? "active" : ""}" data-thumb-src="${img}" alt="Miniatura">
+    `).join("");
+
+    // Habilitar sección de reseñas si tiene compra disponible
+    const user = currentUser();
+    const yaRevisado = user ? user.reviews.some(r => r.purchaseId === preferredPurchaseId) : false;
+    
+    if (user && preferredPurchaseId && !yaRevisado) {
+      byId("detailReviewForm").style.display = "grid";
+      byId("reviewHint").style.display = "none";
+    } else {
+      byId("detailReviewForm").style.display = "none";
+      byId("reviewHint").style.display = "block";
+      byId("reviewHint").textContent = yaRevisado ? "Ya has calificado esta compra." : "Esta opción se habilita automáticamente al comprar el producto.";
     }
 
-    function ensureUser() {
-      const user = currentUser();
-      if (user) return user;
-      showToast("Registrate con correo y nombre publico para continuar");
-      byId("accountArea").scrollIntoView({ behavior: "smooth", block: "start" });
-      return null;
+    // Cargar Reseñas del producto
+    const reviews = productReviews(product.id);
+    byId("detailReviews").innerHTML = reviews.length ? reviews.map(r => `
+      <div class="review-item">
+        ${r.photo ? `<img src="${r.photo}" class="review-photo" alt="Foto de cliente">` : ""}
+        <div>
+          <strong>${r.publicName} <span class="shipping">✓ Comprador</span></strong>
+          <p class="small">${r.text}</p>
+        </div>
+      </div>
+    `).join("") : `<div class="empty">Aún no hay reseñas con foto para este producto. ¡Sé el primero!</div>`;
+
+    byId("productModal").classList.add("open");
+  }
+
+  // --- PANEL ADMINISTRADOR (PROPIETARIO) ---
+  function initAdminList() {
+    byId("adminList").innerHTML = state.products.map(p => `
+      <div class="admin-product">
+        <img src="${p.image}" alt="${p.name}">
+        <div>
+          <strong>${p.name}</strong>
+          <span class="small">${money.format(p.price)} · ${p.category}</span>
+        </div>
+        <div class="actions">
+          <button class="ghost-button" type="button" data-edit-admin="${p.id}">Editar</button>
+          <button class="danger-button" type="button" data-delete-admin="${p.id}">Quitar</button>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  // --- MANEJO DE EVENTOS (LISTENERS GLOBALES) ---
+
+  window.addEventListener("click", async (e) => {
+    // Categorías
+    if (e.target.classList.contains("chip")) {
+      state.category = e.target.dataset.category;
+      renderCategories();
+      renderProducts();
     }
-
-    function saveUsers() { write(storage.users, state.users); }
-    function saveProducts() { write(storage.products, state.products); }
-
-    function showToast(message) {
-      byId("toast").textContent = message;
-      byId("toast").classList.add("show");
-      window.clearTimeout(showToast.timer);
-      showToast.timer = window.setTimeout(() => byId("toast").classList.remove("show"), 1900);
+    // Agregar al carrito
+    if (e.target.hasAttribute("data-add-cart")) {
+      const prod = state.products.find(p => p.id === parseInt(e.target.getAttribute("data-add-cart")));
+      if (prod) {
+        state.cart.push(prod);
+        renderCart();
+        showToast("Producto agregado al pedido");
+      }
     }
-
-    function productReviews(productId) {
-      return Object.values(state.users).flatMap((user) =>
-        user.reviews.map((review) => ({ ...review, publicName: user.publicName }))
-      ).filter((review) => review.productId === productId);
+    // Quitar del carrito
+    if (e.target.classList.contains("remove")) {
+      const idx = parseInt(e.target.getAttribute("data-remove-index"));
+      state.cart.splice(idx, 1);
+      renderCart();
     }
-
-    function availablePurchaseForProduct(productId, preferredPurchaseId = null) {
-      const user = currentUser();
-      if (!user) return null;
-      const reviewed = new Set(user.reviews.map((review) => review.purchaseId));
-      const purchases = user.purchases.filter((purchase) => purchase.productId === productId && !reviewed.has(purchase.purchaseId));
-      return purchases.find((purchase) => purchase.purchaseId === preferredPurchaseId) || purchases[0] || null;
+    // Abrir detalle de producto
+    const card = e.target.closest("[data-open-product]");
+    if (card && !e.target.hasAttribute("data-add-cart")) {
+      openProductModal(card.dataset.openProduct);
     }
+    // Miniaturas de galería
+    if (e.target.hasAttribute("data-thumb-src")) {
+      document.querySelectorAll(".thumbs img").forEach(img => img.classList.remove("active"));
+      e.target.classList.add("active");
+      byId("detailMainImage").src = e.target.dataset.thumbSrc;
+    }
+    // Botón de reseña en Mis Compras
+    if (e.target.hasAttribute("data-review-prod")) {
+      openProductModal(e.target.getAttribute("data-review-prod"), e.target.getAttribute("data-review-pur"));
+    }
+    // Acciones de administración (Editar / Quitar)
+    if (e.target.hasAttribute("data-edit-admin")) {
+      const p = state.products.find(x => x.id === parseInt(e.target.getAttribute("data-edit-admin")));
+      if (p) {
+        byId("productId").value = p.id;
+        byId("productName").value = p.name;
+        byId("productCategory").value = p.category;
+        byId("productPrice").value = p.price;
+        byId("productOldPrice").value = p.oldPrice || "";
+        byId("productRating").value = p.rating;
+        byId("productBadge").value = p.badge || "";
+        byId("productDescription").value = p.description;
+        byId("productImage").value = p.image;
+        byId("productGallery").value = (p.gallery || []).join("\n");
+      }
+    }
+    if (e.target.hasAttribute("data-delete-admin")) {
+      const id = parseInt(e.target.getAttribute("data-delete-admin"));
+      state.products = state.products.filter(x => x.id !== id);
+      await saveProductsToCloud();
+      initAdminList();
+      renderProducts();
+    }
+  });
 
-    function filteredProducts() {
-      return state.products.filter((product) => {
-        const matchesCategory = state.category === "Todos" || product.category === state.category;
-        const text = `${product.name} ${product.category} ${product.description}`.toLowerCase();
-        return matchesCategory && text.includes(state.query.toLowerCase());
+  // Atajos navegación rápida
+  byId("accountShortcut").onclick = () => byId("accountArea").scrollIntoView({ behavior: "smooth" });
+  byId("walletShortcut").onclick = () => byId("accountArea").scrollIntoView({ behavior: "smooth" });
+  byId("cartShortcut").onclick = () => byId("orderPanel").scrollIntoView({ behavior: "smooth" });
+  byId("shopNow").onclick = () => byId("productGrid").scrollIntoView({ behavior: "smooth" });
+
+  // Modales comportamiento básico
+  byId("openInfo").onclick = () => byId("infoModal").classList.add("open");
+  byId("closeInfo").onclick = () => byId("infoModal").classList.remove("open");
+  byId("acceptInfo").onclick = () => byId("infoModal").classList.remove("open");
+  byId("closeProduct").onclick = () => byId("productModal").classList.remove("open");
+  byId("ownerHotspot").onclick = () => byId("adminOverlay").classList.add("open");
+  byId("closeAdmin").onclick = () => byId("adminOverlay").classList.remove("open");
+  
+  // Agregar al pedido desde modal de detalle
+  byId("detailAdd").onclick = () => {
+    if (state.detailProductId) {
+      const prod = state.products.find(p => p.id === state.detailProductId);
+      if (prod) {
+        state.cart.push(prod);
+        renderCart();
+        showToast("Producto agregado al pedido");
+      }
+    }
+  };
+
+  // Buscador
+  byId("searchForm").onsubmit = (e) => {
+    e.preventDefault();
+    state.query = byId("searchInput").value;
+    renderProducts();
+  };
+
+  // Autenticación por Formulario manual
+  byId("accountForm").onsubmit = async (e) => {
+    e.preventDefault();
+    const email = byId("email").value.trim().toLowerCase();
+    const publicName = byId("publicName").value.trim();
+    if (!email || !publicName) return;
+
+    state.currentEmail = email;
+    let user = await loadUserFromCloud(email);
+    if (!user) {
+      user = { email, publicName, wallet: 0, purchases: [], reviews: [] };
+    } else {
+      user.publicName = publicName; // Actualiza el nombre por si cambió
+    }
+    state.users[email] = user;
+    await saveUserToCloud(email, user);
+    updateInterface();
+    showToast(`¡Bienvenido, ${publicName}!`);
+  };
+
+  // Autenticación por POPUP de Google Real
+  byId("googleButton").onclick = async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const email = result.user.email.toLowerCase();
+      const publicName = result.user.displayName || "Usuario Premium";
+
+      state.currentEmail = email;
+      let user = await loadUserFromCloud(email);
+      if (!user) {
+        user = { email, publicName, wallet: 0, purchases: [], reviews: [] };
+      }
+      state.users[email] = user;
+      await saveUserToCloud(email, user);
+      updateInterface();
+      showToast(`Conectado como ${user.publicName}`);
+    } catch (error) {
+      console.error(error);
+      showToast("Error al autenticar con Google");
+    }
+  };
+
+  // Observador de estado de sesión de Firebase
+  onAuthStateChanged(auth, async (fbUser) => {
+    if (fbUser) {
+      const email = fbUser.email.toLowerCase();
+      state.currentEmail = email;
+      if (!state.users[email]) {
+        state.users[email] = await loadUserFromCloud(email);
+      }
+      updateInterface();
+    }
+  });
+
+  // Finalizar Compra por WhatsApp e Inyectar compra en el historial
+  byId("checkoutButton").onclick = async () => {
+    const user = currentUser();
+    if (!user) {
+      ensureUser();
+      return;
+    }
+    if (!state.cart.length) return;
+
+    // Generar IDs de compras temporales
+    const textLines = state.cart.map(p => {
+      const pId = "PUR-" + Math.floor(Math.random() * 900000 + 100000);
+      user.purchases.push({
+        purchaseId: pId,
+        productId: p.id,
+        date: new Date().toLocaleDateString("es-MX")
+      });
+      return `- ${p.name} (${money.format(p.price)})`;
+    });
+
+    // Guardar cambios del usuario comprador en Firebase
+    await saveUserToCloud(state.currentEmail, user);
+
+    // Mandar mensaje a WhatsApp
+    const totalText = byId("total").textContent;
+    const msg = encodeURIComponent(`¡Hola! Me interesa concretar este pedido en persona:\n\nCliente: ${user.publicName}\nCorreo: ${user.email}\n\nProductos:\n${textLines.join("\n")}\n\nTotal: ${totalText}\n\nQuedo atento para coordinar la entrega.`);
+    
+    state.cart = []; // Limpiamos carrito
+    updateInterface();
+    window.open(`https://wa.me/${sellerPhone}?text=${msg}`, "_blank");
+  };
+
+  // Enviar Reseña y ganar dinero ($10 MXN)
+  byId("detailReviewForm").onsubmit = async (e) => {
+    e.preventDefault();
+    const user = currentUser();
+    if (!user || !state.detailProductId || !state.detailPurchaseId) return;
+
+    const text = byId("detailReviewText").value.trim();
+    // Simulamos almacenamiento de foto en Base64 por simplicidad (puedes adaptarlo a Firebase Storage después)
+    const fileInput = byId("detailReviewPhoto");
+    let photoBase64 = "";
+
+    if (fileInput.files.length > 0) {
+      const file = fileInput.files[0];
+      photoBase64 = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(file);
       });
     }
 
-    function renderCategories() {
-      const categories = ["Todos", ...new Set(state.products.map((product) => product.category))];
-      byId("categories").innerHTML = categories.map((category) => `
-        <button class="chip ${state.category === category ? "active" : ""}" type="button" data-category="${category}">${category}</button>
-      `).join("");
-    }
-
-    function renderProducts() {
-      const items = filteredProducts();
-      byId("productGrid").innerHTML = items.length ? items.map((product) => `
-        <article class="product-card" data-open-product="${product.id}">
-          <div class="product-image">
-            <img src="${product.image}" alt="${product.name}" loading="lazy" />
-            <span class="badge">${product.badge || "Oro"}</span>
-          </div>
-          <div class="product-info">
-            <div class="rating">★ ${Number(product.rating).toFixed(1)} · ${productReviews(product.id).length} resenas</div>
-            <h3 class="product-title">${product.name}</h3>
-            <div class="meta">${product.description}</div>
-            <div class="price-row"><span class="price">${money.format(product.price)}</span>${product.oldPrice ? `<span class="old-price">${money.format(product.oldPrice)}</span>` : ""}</div>
-            <div class="shipping">Entrega personal de 2 a 4 dias</div>
-            <button class="add" type="button" data-add="${product.id}">Agregar al pedido</button>
-          </div>
-        </article>
-      `).join("") : `<p class="empty">No encontramos productos con esa busqueda.</p>`;
-    }
-
-    function renderOrder() {
-      byId("orderList").innerHTML = state.cart.length ? state.cart.map((product) => `
-        <div class="order-item">
-          <img src="${product.image}" alt="${product.name}" />
-          <div><div class="order-name">${product.name}</div><div class="order-price">${money.format(product.price)}</div></div>
-          <button class="remove" type="button" data-remove="${product.cartId}" aria-label="Cancelar ${product.name}">×</button>
-        </div>
-      `).join("") : `<div class="empty">Tu pedido esta vacio. Agrega productos y podras quitarlos antes de pagar.</div>`;
-      const subtotal = state.cart.reduce((sum, product) => sum + Number(product.price), 0);
-      byId("cartCount").textContent = state.cart.length;
-      byId("orderStatus").textContent = state.cart.length ? `${state.cart.length} producto${state.cart.length > 1 ? "s" : ""}` : "Sin productos";
-      byId("subtotal").textContent = money.format(subtotal);
-      byId("total").textContent = money.format(subtotal);
-    }
-
-    function renderAccount() {
-      const user = currentUser();
-      byId("accountStatus").textContent = user ? user.publicName : "Sin sesion";
-      byId("walletTop").textContent = money.format(user?.wallet || 0);
-      byId("walletBalance").textContent = `${money.format(user?.wallet || 0)} MXN disponibles`;
-      if (user) {
-        byId("email").value = user.email;
-        byId("publicName").value = user.publicName;
-      }
-      renderPurchases();
-    }
-
-    function renderPurchases() {
-      const user = currentUser();
-      if (!user) {
-        byId("purchaseCount").textContent = "0";
-        byId("purchaseList").innerHTML = `<div class="empty">Crea tu cuenta para ver historial, monedero y resenas disponibles.</div>`;
-        return;
-      }
-      byId("purchaseCount").textContent = `${user.purchases.length}`;
-      byId("purchaseList").innerHTML = user.purchases.length ? user.purchases.map((purchase) => {
-        const reviewed = user.reviews.some((review) => review.purchaseId === purchase.purchaseId);
-        return `
-          <article class="purchase-item">
-            <img src="${purchase.image}" alt="${purchase.name}" />
-            <div>
-              <strong>${purchase.name}</strong>
-              <div class="small">${money.format(purchase.price)} · ${new Date(purchase.date).toLocaleDateString("es-MX")}</div>
-              <div class="${reviewed ? "small" : "wallet-amount"}">${reviewed ? "Resena publicada" : "Resena disponible: gana $10 MXN"}</div>
-            </div>
-            <div class="actions">
-              <button class="ghost-button" type="button" data-open-purchase="${purchase.purchaseId}">Ver producto</button>
-            </div>
-          </article>
-        `;
-      }).join("") : `<div class="empty">Aun no tienes compras. Cuando compres, apareceran aqui para dejar resenas.</div>`;
-    }
-
-    function renderAdmin() {
-      byId("adminList").innerHTML = state.products.map((product) => `
-        <article class="admin-product">
-          <img src="${product.image}" alt="${product.name}" />
-          <div><strong>${product.name}</strong><div class="small">${product.category} · ${money.format(product.price)}</div><div class="small">${product.description}</div></div>
-          <div class="actions">
-            <button class="ghost-button" type="button" data-edit="${product.id}">Editar</button>
-            <button class="danger-button" type="button" data-delete="${product.id}">Quitar</button>
-          </div>
-        </article>
-      `).join("");
-    }
-
-    function renderAll() {
-      renderCategories();
-      renderProducts();
-      renderOrder();
-      renderAccount();
-      renderAdmin();
-    }
-
-    function galleryFor(product) {
-      return [product.image, ...(product.gallery || []), ...productReviews(product.id).map((review) => review.photo)];
-    }
-
-    function openProduct(productId, purchaseId = null) {
-      const product = state.products.find((item) => item.id === Number(productId));
-      if (!product) return;
-      state.detailProductId = product.id;
-      state.detailPurchaseId = purchaseId;
-      byId("detailTitle").textContent = product.name;
-      byId("detailSubtitle").textContent = `${product.category} · entrega personal de 2 a 4 dias`;
-      byId("detailRating").textContent = `★ ${Number(product.rating).toFixed(1)} · ${productReviews(product.id).length} comentarios`;
-      byId("detailPrice").textContent = money.format(product.price);
-      byId("detailOldPrice").textContent = product.oldPrice ? money.format(product.oldPrice) : "";
-      byId("detailDescription").textContent = product.description;
-      const images = galleryFor(product);
-      byId("detailMainImage").src = images[0];
-      byId("detailMainImage").alt = product.name;
-      byId("detailThumbs").innerHTML = images.map((src, index) => `<img src="${src}" alt="Foto ${index + 1} de ${product.name}" class="${index === 0 ? "active" : ""}" data-thumb="${src}" />`).join("");
-      renderDetailReviews(product.id);
-      renderDetailReviewForm(product.id, purchaseId);
-      byId("productModal").classList.add("open");
-    }
-
-    function renderDetailReviews(productId) {
-      const reviews = productReviews(productId);
-      byId("detailReviews").innerHTML = reviews.length ? reviews.map((review) => `
-        <article class="review-item">
-          <img class="review-photo" src="${review.photo}" alt="Foto publicada por ${review.publicName}" />
-          <div><strong>${review.publicName}</strong><div class="small">${review.text}</div><div class="wallet-amount">Resena verificada por compra</div></div>
-        </article>
-      `).join("") : `<div class="empty">Aun no hay comentarios de compradores para este producto.</div>`;
-    }
-
-    function renderDetailReviewForm(productId, purchaseId = null) {
-      const user = currentUser();
-      const available = availablePurchaseForProduct(productId, purchaseId);
-      const form = byId("detailReviewForm");
-      form.dataset.purchaseId = available?.purchaseId || "";
-      const canReview = Boolean(user && available);
-      form.style.display = canReview ? "grid" : "none";
-      byId("reviewHint").textContent = canReview
-        ? `Estas usando una resena disponible de ${available.name}.`
-        : "Para publicar una resena entra desde Mis compras y selecciona un producto comprado sin resenar.";
-    }
-
-    function clearProductForm() {
-      byId("productId").value = "";
-      byId("productForm").reset();
-      byId("productRating").value = "4.8";
-      byId("productBadge").value = "Oro";
-    }
-
-    function buildWhatsappText(user) {
-      const subtotal = state.cart.reduce((sum, product) => sum + Number(product.price), 0);
-      const lines = [
-        "Hola, quiero comprar estos productos de Mercado Nova Premium:",
-        ...state.cart.map((product) => `- ${product.name}: ${money.format(product.price)}`),
-        `Total: ${money.format(subtotal)}`,
-        `Cliente: ${user.publicName}`,
-        `Correo: ${user.email}`,
-        "Entiendo que la entrega es personal en un plazo de 2 a 4 dias."
-      ];
-      return lines.join("\n");
-    }
-
-    document.addEventListener("click", (event) => {
-      const addId = event.target.closest("[data-add]")?.dataset.add;
-      const removeId = event.target.closest("[data-remove]")?.dataset.remove;
-      const category = event.target.closest("[data-category]")?.dataset.category;
-      const productId = event.target.closest("[data-open-product]")?.dataset.openProduct;
-      const purchaseId = event.target.closest("[data-open-purchase]")?.dataset.openPurchase;
-      const editId = event.target.closest("[data-edit]")?.dataset.edit;
-      const deleteId = event.target.closest("[data-delete]")?.dataset.delete;
-      const thumb = event.target.closest("[data-thumb]")?.dataset.thumb;
-
-      if (addId) {
-        event.stopPropagation();
-        const product = state.products.find((item) => item.id === Number(addId));
-        state.cart.push({ ...product, cartId: crypto.randomUUID() });
-        renderOrder();
-        showToast("Producto agregado al pedido");
-      } else if (removeId) {
-        state.cart = state.cart.filter((product) => product.cartId !== removeId);
-        renderOrder();
-        showToast("Producto cancelado del pedido");
-      } else if (category) {
-        state.category = category;
-        renderCategories();
-        renderProducts();
-      } else if (purchaseId) {
-        const user = currentUser();
-        const purchase = user?.purchases.find((item) => item.purchaseId === purchaseId);
-        if (purchase) openProduct(purchase.productId, purchase.purchaseId);
-      } else if (productId) {
-        openProduct(productId);
-      } else if (thumb) {
-        byId("detailMainImage").src = thumb;
-        document.querySelectorAll("[data-thumb]").forEach((img) => img.classList.toggle("active", img.dataset.thumb === thumb));
-      } else if (editId) {
-        const product = state.products.find((item) => item.id === Number(editId));
-        byId("productId").value = product.id;
-        byId("productName").value = product.name;
-        byId("productCategory").value = product.category;
-        byId("productPrice").value = product.price;
-        byId("productOldPrice").value = product.oldPrice || "";
-        byId("productRating").value = product.rating;
-        byId("productBadge").value = product.badge || "";
-        byId("productDescription").value = product.description;
-        byId("productImage").value = product.image;
-        byId("productGallery").value = (product.gallery || []).join("\n");
-      } else if (deleteId) {
-        state.products = state.products.filter((item) => item.id !== Number(deleteId));
-        state.cart = state.cart.filter((item) => item.id !== Number(deleteId));
-        await saveProductsToCloud();
-        renderAll();
-        showToast("Producto quitado");
-      }
+    // Guardar la reseña en el registro del usuario
+    user.reviews.push({
+      purchaseId: state.detailPurchaseId,
+      productId: state.detailProductId,
+      text: text,
+      photo: photoBase64
     });
 
-    byId("accountForm").addEventListener("submit", (event) => {
-      event.preventDefault();
-      const email = byId("email").value.trim().toLowerCase();
-      const publicName = byId("publicName").value.trim();
-      state.users[email] = state.users[email] || { email, publicName, wallet: 0, purchases: [], reviews: [] };
-      state.users[email].publicName = publicName;
-      state.currentEmail = email;
-      write(storage.user, email);
-      saveUsers();
-      renderAccount();
-      showToast("Cuenta lista");
-    });
+    user.wallet += 10; // Sumar recompensa al monedero premium
+    await saveUserToCloud(state.currentEmail, user);
+    
+    byId("detailReviewText").value = "";
+    fileInput.value = "";
+    
+    showToast("¡Reseña publicada! Ganaste $10 MXN");
+    byId("productModal").classList.remove("open");
+    updateInterface();
+  };
 
-    byId("googleButton").addEventListener("click", () => {
-      byId("email").value = byId("email").value || "cliente.google@gmail.com";
-      byId("publicName").value = byId("publicName").value || "Cliente Google";
-      byId("accountForm").requestSubmit();
-    });
+  // Guardar / Editar Producto desde el Panel Privado
+  byId("productForm").onsubmit = async (e) => {
+    e.preventDefault();
+    const idVal = byId("productId").value;
+    const galleryText = byId("productGallery").value;
+    
+    const productData = {
+      id: idVal ? parseInt(idVal) : Date.now(),
+      name: byId("productName").value.trim(),
+      category: byId("productCategory").value.trim(),
+      price: parseInt(byId("productPrice").value),
+      oldPrice: byId("productOldPrice").value ? parseInt(byId("productOldPrice").value) : null,
+      rating: parseFloat(byId("productRating").value),
+      badge: byId("productBadge").value.trim() || null,
+      description: byId("productDescription").value.trim(),
+      image: byId("productImage").value.trim(),
+      gallery: galleryText.split("\n").map(x => x.trim()).filter(Boolean)
+    };
 
-    byId("checkoutButton").addEventListener("click", () => {
-      const user = ensureUser();
-      if (!user) return;
-      if (!state.cart.length) {
-        showToast("Agrega al menos un producto antes de comprar");
-        return;
-      }
-
-      const purchases = state.cart.map((product) => ({
-        purchaseId: crypto.randomUUID(),
-        productId: product.id,
-        name: product.name,
-        price: product.price,
-        image: product.image,
-        date: new Date().toISOString()
-      }));
-      user.purchases = [...purchases, ...user.purchases];
-      saveUsers();
-      const text = buildWhatsappText(user);
-      window.open(`https://wa.me/${sellerPhone}?text=${encodeURIComponent(text)}`, "_blank");
-      state.cart = [];
-      renderAll();
-      byId("accountArea").scrollIntoView({ behavior: "smooth", block: "start" });
-      showToast(`${purchases.length} resena${purchases.length === 1 ? "" : "s"} disponible${purchases.length === 1 ? "" : "s"} en Mis compras`);
-    });
-
-    byId("detailReviewForm").addEventListener("submit", (event) => {
-      event.preventDefault();
-      const user = ensureUser();
-      if (!user) return;
-      const productId = state.detailProductId;
-      const purchaseId = byId("detailReviewForm").dataset.purchaseId;
-      const purchase = user.purchases.find((item) => item.purchaseId === purchaseId);
-      const alreadyReviewed = user.reviews.some((review) => review.purchaseId === purchaseId);
-      const file = byId("detailReviewPhoto").files[0];
-      if (!purchase || alreadyReviewed || !file) {
-        showToast("Esta compra no tiene resena disponible");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = () => {
-        user.reviews.unshift({
-          id: crypto.randomUUID(),
-          purchaseId,
-          productId,
-          productName: purchase.name,
-          text: byId("detailReviewText").value.trim(),
-          photo: reader.result,
-          createdAt: new Date().toISOString()
-        });
-        user.wallet += 10;
-        saveUsers();
-        byId("detailReviewForm").reset();
-        renderAll();
-        openProduct(productId);
-        showToast("Resena publicada. Ganaste $10 MXN");
-      };
-      reader.readAsDataURL(file);
-    });
-
-    byId("productForm").addEventListener("submit", (event) => {
-      event.preventDefault();
-      const existingId = Number(byId("productId").value);
-      const product = {
-        id: existingId || Date.now(),
-        name: byId("productName").value.trim(),
-        category: byId("productCategory").value.trim(),
-        price: Number(byId("productPrice").value),
-        oldPrice: Number(byId("productOldPrice").value) || 0,
-        rating: Number(byId("productRating").value) || 4.8,
-        badge: byId("productBadge").value.trim() || "Oro",
-        description: byId("productDescription").value.trim(),
-        image: byId("productImage").value.trim(),
-        gallery: byId("productGallery").value.split("\n").map((url) => url.trim()).filter(Boolean)
-      };
-      state.products = existingId ? state.products.map((item) => item.id === existingId ? product : item) : [product, ...state.products];
-      await saveProductsToCloud();
-      clearProductForm();
-      renderAll();
-      showToast("Producto guardado");
-    });
-
-    byId("searchForm").addEventListener("submit", (event) => {
-      event.preventDefault();
-      state.query = byId("searchInput").value.trim();
-      renderProducts();
-    });
-
-    byId("detailAdd").addEventListener("click", () => {
-      const product = state.products.find((item) => item.id === Number(state.detailProductId));
-      if (!product) return;
-      state.cart.push({ ...product, cartId: crypto.randomUUID() });
-      renderOrder();
-      showToast("Producto agregado al pedido");
-    });
-
-    byId("shopNow").addEventListener("click", () => document.querySelector("main").scrollIntoView({ behavior: "smooth" }));
-    byId("accountShortcut").addEventListener("click", () => byId("accountArea").scrollIntoView({ behavior: "smooth" }));
-    byId("walletShortcut").addEventListener("click", () => byId("accountArea").scrollIntoView({ behavior: "smooth" }));
-    byId("cartShortcut").addEventListener("click", () => byId("orderPanel").scrollIntoView({ behavior: "smooth" }));
-    byId("openInfo").addEventListener("click", () => byId("infoModal").classList.add("open"));
-    byId("closeInfo").addEventListener("click", () => {
-      write(storage.infoSeen, true);
-      byId("infoModal").classList.remove("open");
-    });
-    byId("acceptInfo").addEventListener("click", () => {
-      write(storage.infoSeen, true);
-      byId("infoModal").classList.remove("open");
-    });
-    byId("closeProduct").addEventListener("click", () => byId("productModal").classList.remove("open"));
-    byId("resetProductForm").addEventListener("click", clearProductForm);
-    byId("closeAdmin").addEventListener("click", () => byId("adminOverlay").classList.remove("open"));
-
-    function openAdmin() {
-      const pin = prompt("PIN del propietario");
-      if (pin === "premium2026") {
-        byId("adminOverlay").classList.add("open");
-        renderAdmin();
-      } else if (pin !== null) {
-        showToast("PIN incorrecto");
-      }
+    if (idVal) {
+      // Editar
+      state.products = state.products.map(x => x.id === productData.id ? productData : x);
+    } else {
+      // Crear nuevo
+      state.products.push(productData);
     }
 
-    byId("ownerHotspot").addEventListener("click", openAdmin);
-    document.addEventListener("keydown", (event) => {
-      if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === "a") openAdmin();
-    });
-    if (new URLSearchParams(location.search).get("admin") === "1") window.setTimeout(openAdmin, 300);
-
-   (async () => {
-
-  await loadProductsFromCloud();
-
-  if (!state.products.length) {
-    state.products = defaultProducts;
     await saveProductsToCloud();
-  }
+    byId("productForm").reset();
+    byId("productId").value = "";
+    
+    initAdminList();
+    renderCategories();
+    renderProducts();
+  };
 
-  clearProductForm();
-  renderAll();
+  byId("resetProductForm").onclick = () => {
+    byId("productForm").reset();
+    byId("productId").value = "";
+  };
 
-  if (!read(storage.infoSeen, false))
-    byId("infoModal").classList.add("open");
-
-})();
-  </script>
+  // Carga Inicial del Catálogo Completo
+  loadProductsFromCloud();
+</script>
 </body>
 </html>
