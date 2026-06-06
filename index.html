@@ -1,3 +1,41 @@
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged }
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+  
+const firebaseConfig = {
+  apiKey: "AIzaSyCQZc42suWda4uAa35C7Z8hgoStFmn9Rrs",
+  authDomain: "adrianshop-c50bb.firebaseapp.com",
+  projectId: "adrianshop-c50bb",
+  storageBucket: "adrianshop-c50bb.firebasestorage.app",
+  messagingSenderId: "323803301457",
+  appId: "1:323803301457:web:f64a7a1afad3c8b07f9a70"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
+  const db = getFirestore(app);
+
+window.firebaseDB = db;
+window.firebaseDoc = doc;
+window.firebaseGetDoc = getDoc;
+window.firebaseSetDoc = setDoc;
+
+window.firebaseAuth = auth;
+window.firebaseProvider = provider;
+window.firebaseSignIn = signInWithPopup;
+window.firebaseOnAuthStateChanged = onAuthStateChanged;
+</script>
+
 <!doctype html>
 <html lang="es">
 <head>
@@ -267,7 +305,7 @@
     }
 
     .product-info { padding: 14px; display: grid; gap: 9px; flex: 1; }
-    .rating { color: #8a6208; font-size: 0.88rem; font-weight: 950; }
+    .review-count-only { color: var(--muted); font-size: 0.88rem; font-weight: 950; }
     .product-title { font-size: 1rem; line-height: 1.35; }
     .meta, .small { color: var(--muted); font-size: 0.88rem; line-height: 1.42; }
     .price-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
@@ -583,7 +621,7 @@
           <div class="thumbs" id="detailThumbs"></div>
         </div>
         <div class="detail-side">
-          <div class="rating" id="detailRating"></div>
+          <div class="review-count-only" id="detailRating"></div>
           <div class="price-row"><span class="price" id="detailPrice"></span><span class="old-price" id="detailOldPrice"></span></div>
           <p class="meta" id="detailDescription"></p>
           <button class="add" type="button" id="detailAdd">Agregar al pedido</button>
@@ -633,7 +671,6 @@
           <div class="field"><label for="productCategory">Categoria</label><input id="productCategory" required /></div>
           <div class="field"><label for="productPrice">Precio MXN</label><input id="productPrice" type="number" min="1" step="1" required /></div>
           <div class="field"><label for="productOldPrice">Precio anterior MXN</label><input id="productOldPrice" type="number" min="1" step="1" /></div>
-          <div class="field"><label for="productRating">Calificacion</label><input id="productRating" type="number" min="1" max="5" step="0.1" required /></div>
           <div class="field"><label for="productBadge">Etiqueta</label><input id="productBadge" placeholder="Oferta, Nuevo, Top ventas" /></div>
           <div class="field"><label for="productDescription">Descripcion detallada</label><textarea id="productDescription" required></textarea></div>
           <div class="field"><label for="productImage">Imagen principal</label><input id="productImage" required placeholder="https://..." /></div>
@@ -652,20 +689,37 @@
 
   <script>
     const defaultProducts = [
-      { id: 1, name: "Laptop ultraligera 14 pulgadas", category: "Tecnologia", price: 14999, oldPrice: 17999, rating: 4.8, description: "Laptop premium con 16 GB RAM, SSD 512 GB, cuerpo metalico, pantalla nitida y rendimiento ideal para trabajo, estudio y creacion de contenido.", badge: "Oferta", image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=800&q=85", gallery: ["https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=900&q=85", "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=85"] },
-      { id: 2, name: "Audifonos inalambricos premium", category: "Tecnologia", price: 1299, oldPrice: 1899, rating: 4.7, description: "Audifonos con cancelacion de ruido, estuche de carga, audio envolvente y diseno comodo para usarlos por horas.", badge: "Top ventas", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=85", gallery: ["https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=900&q=85", "https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&w=900&q=85"] },
-      { id: 3, name: "Smartwatch deportivo resistente", category: "Tecnologia", price: 2199, oldPrice: 2699, rating: 4.6, description: "Reloj inteligente con GPS, monitoreo cardiaco, resistencia al agua, bateria extendida y modos deportivos.", badge: "Nuevo", image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=85", gallery: ["https://images.unsplash.com/photo-1579586337278-3befd40fd17a?auto=format&fit=crop&w=900&q=85"] },
-      { id: 4, name: "Cafetera espresso compacta", category: "Hogar", price: 3499, oldPrice: 4199, rating: 4.9, description: "Cafetera de 15 bares con acabado elegante, tamano compacto y preparacion rapida para espresso, americano y capuchino.", badge: "Envio gratis", image: "https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?auto=format&fit=crop&w=800&q=85", gallery: ["https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=85"] },
-      { id: 5, name: "Silla ergonomica ejecutiva", category: "Hogar", price: 2899, oldPrice: 3599, rating: 4.5, description: "Silla de oficina con soporte lumbar, altura ajustable, respaldo comodo y diseno sobrio para espacios premium.", badge: "Premium", image: "https://images.unsplash.com/photo-1580480055273-228ff5388ef8?auto=format&fit=crop&w=800&q=85", gallery: ["https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&w=900&q=85"] },
-      { id: 6, name: "Mochila urbana impermeable", category: "Moda", price: 899, oldPrice: 1199, rating: 4.6, description: "Mochila resistente al agua con espacio para laptop, organizadores internos y estilo minimalista para uso diario.", badge: "Popular", image: "https://images.unsplash.com/photo-1622560480605-d83c853bc5c3?auto=format&fit=crop&w=800&q=85", gallery: ["https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=900&q=85"] }
+      { id: 1, name: "Laptop ultraligera 14 pulgadas", category: "Tecnologia", price: 14999, oldPrice: 17999, description: "Laptop premium con 16 GB RAM, SSD 512 GB, cuerpo metalico, pantalla nitida y rendimiento ideal para trabajo, estudio y creacion de contenido.", badge: "Oferta", image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=800&q=85", gallery: ["https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=900&q=85", "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=85"] },
+      { id: 2, name: "Audifonos inalambricos premium", category: "Tecnologia", price: 1299, oldPrice: 1899, description: "Audifonos con cancelacion de ruido, estuche de carga, audio envolvente y diseno comodo para usarlos por horas.", badge: "Top ventas", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=85", gallery: ["https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=900&q=85", "https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&w=900&q=85"] },
+      { id: 3, name: "Smartwatch deportivo resistente", category: "Tecnologia", price: 2199, oldPrice: 2699, description: "Reloj inteligente con GPS, monitoreo cardiaco, resistencia al agua, bateria extendida y modos deportivos.", badge: "Nuevo", image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=85", gallery: ["https://images.unsplash.com/photo-1579586337278-3befd40fd17a?auto=format&fit=crop&w=900&q=85"] },
+      { id: 4, name: "Cafetera espresso compacta", category: "Hogar", price: 3499, oldPrice: 4199, description: "Cafetera de 15 bares con acabado elegante, tamano compacto y preparacion rapida para espresso, americano y capuchino.", badge: "Envio gratis", image: "https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?auto=format&fit=crop&w=800&q=85", gallery: ["https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=85"] },
+      { id: 5, name: "Silla ergonomica ejecutiva", category: "Hogar", price: 2899, oldPrice: 3599, description: "Silla de oficina con soporte lumbar, altura ajustable, respaldo comodo y diseno sobrio para spaces premium.", badge: "Premium", image: "https://images.unsplash.com/photo-1580480055273-228ff5388ef8?auto=format&fit=crop&w=800&q=85", gallery: ["https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&w=900&q=85"] },
+      { id: 6, name: "Mochila urbana impermeable", category: "Moda", price: 899, oldPrice: 1199, description: "Mochila resistente al agua con espacio para laptop, organizadores internos y estilo minimalista para uso diario.", badge: "Popular", image: "https://images.unsplash.com/photo-1622560480605-d83c853bc5c3?auto=format&fit=crop&w=800&q=85", gallery: ["https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=900&q=85"] }
     ];
 
-    const storage = {
-      products: "novaProductsV4",
-      user: "novaCurrentUserV4",
-      users: "novaUsersV4",
-      infoSeen: "novaInfoSeenV4"
-    };
+ const storage = {
+  products: "novaProductsV4",
+  user: "novaCurrentUserV4",
+  users: "novaUsersV4",
+  infoSeen: "novaInfoSeenV4"
+};
+
+async function saveProductsToCloud() {
+  await firebaseSetDoc(
+    firebaseDoc(firebaseDB, "store", "products"),
+    { items: state.products }
+  );
+}
+
+async function loadProductsFromCloud() {
+  const snap = await firebaseGetDoc(
+    firebaseDoc(firebaseDB, "store", "products")
+  );
+
+  if (snap.exists()) {
+    state.products = snap.data().items || [];
+  }
+}
 
     const sellerPhone = "525542910238";
     const byId = (id) => document.getElementById(id);
@@ -695,7 +749,7 @@
     function ensureUser() {
       const user = currentUser();
       if (user) return user;
-      showToast("Registrate con correo y nombre publico para continuar");
+      showToast("Registrate con correo o usa Google para continuar");
       byId("accountArea").scrollIntoView({ behavior: "smooth", block: "start" });
       return null;
     }
@@ -748,7 +802,7 @@
             <span class="badge">${product.badge || "Oro"}</span>
           </div>
           <div class="product-info">
-            <div class="rating">★ ${Number(product.rating).toFixed(1)} · ${productReviews(product.id).length} resenas</div>
+            <div class="review-count-only">${productReviews(product.id).length} resenas verificadas</div>
             <h3 class="product-title">${product.name}</h3>
             <div class="meta">${product.description}</div>
             <div class="price-row"><span class="price">${money.format(product.price)}</span>${product.oldPrice ? `<span class="old-price">${money.format(product.oldPrice)}</span>` : ""}</div>
@@ -844,7 +898,7 @@
       state.detailPurchaseId = purchaseId;
       byId("detailTitle").textContent = product.name;
       byId("detailSubtitle").textContent = `${product.category} · entrega personal de 2 a 4 dias`;
-      byId("detailRating").textContent = `★ ${Number(product.rating).toFixed(1)} · ${productReviews(product.id).length} comentarios`;
+      byId("detailRating").textContent = `${productReviews(product.id).length} comentarios de clientes`;
       byId("detailPrice").textContent = money.format(product.price);
       byId("detailOldPrice").textContent = product.oldPrice ? money.format(product.oldPrice) : "";
       byId("detailDescription").textContent = product.description;
@@ -882,7 +936,6 @@
     function clearProductForm() {
       byId("productId").value = "";
       byId("productForm").reset();
-      byId("productRating").value = "4.8";
       byId("productBadge").value = "Oro";
     }
 
@@ -899,7 +952,7 @@
       return lines.join("\n");
     }
 
-    document.addEventListener("click", (event) => {
+    document.addEventListener("click", async (event) => {
       const addId = event.target.closest("[data-add]")?.dataset.add;
       const removeId = event.target.closest("[data-remove]")?.dataset.remove;
       const category = event.target.closest("[data-category]")?.dataset.category;
@@ -939,7 +992,6 @@
         byId("productCategory").value = product.category;
         byId("productPrice").value = product.price;
         byId("productOldPrice").value = product.oldPrice || "";
-        byId("productRating").value = product.rating;
         byId("productBadge").value = product.badge || "";
         byId("productDescription").value = product.description;
         byId("productImage").value = product.image;
@@ -947,7 +999,7 @@
       } else if (deleteId) {
         state.products = state.products.filter((item) => item.id !== Number(deleteId));
         state.cart = state.cart.filter((item) => item.id !== Number(deleteId));
-        saveProducts();
+        await saveProductsToCloud();
         renderAll();
         showToast("Producto quitado");
       }
@@ -967,9 +1019,29 @@
     });
 
     byId("googleButton").addEventListener("click", () => {
-      byId("email").value = byId("email").value || "cliente.google@gmail.com";
-      byId("publicName").value = byId("publicName").value || "Cliente Google";
-      byId("accountForm").requestSubmit();
+      if (!window.firebaseAuth || !window.firebaseProvider || !window.firebaseSignIn) {
+        showToast("Error: Firebase no se ha inicializado correctamente.");
+        return;
+      }
+      
+      window.firebaseSignIn(window.firebaseAuth, window.firebaseProvider)
+        .then((result) => {
+          const user = result.user;
+          const email = user.email.toLowerCase();
+          const publicName = user.displayName || "Usuario Premium";
+          
+          state.users[email] = state.users[email] || { email, publicName, wallet: 0, purchases: [], reviews: [] };
+          state.currentEmail = email;
+          
+          write(storage.user, email);
+          saveUsers();
+          renderAccount();
+          showToast(`Bienvenido, ${publicName}`);
+        })
+        .catch((error) => {
+          console.error("Error en inicio de sesion con Google:", error);
+          showToast("No se pudo iniciar sesion con Google");
+        });
     });
 
     byId("checkoutButton").addEventListener("click", () => {
@@ -1032,7 +1104,7 @@
       reader.readAsDataURL(file);
     });
 
-    byId("productForm").addEventListener("submit", (event) => {
+    byId("productForm").addEventListener("submit", async (event) => {
       event.preventDefault();
       const existingId = Number(byId("productId").value);
       const product = {
@@ -1041,14 +1113,13 @@
         category: byId("productCategory").value.trim(),
         price: Number(byId("productPrice").value),
         oldPrice: Number(byId("productOldPrice").value) || 0,
-        rating: Number(byId("productRating").value) || 4.8,
         badge: byId("productBadge").value.trim() || "Oro",
         description: byId("productDescription").value.trim(),
         image: byId("productImage").value.trim(),
         gallery: byId("productGallery").value.split("\n").map((url) => url.trim()).filter(Boolean)
       };
       state.products = existingId ? state.products.map((item) => item.id === existingId ? product : item) : [product, ...state.products];
-      saveProducts();
+      await saveProductsToCloud();
       clearProductForm();
       renderAll();
       showToast("Producto guardado");
@@ -1101,9 +1172,22 @@
     });
     if (new URLSearchParams(location.search).get("admin") === "1") window.setTimeout(openAdmin, 300);
 
-    clearProductForm();
-    renderAll();
-    if (!read(storage.infoSeen, false)) byId("infoModal").classList.add("open");
+   (async () => {
+
+  await loadProductsFromCloud();
+
+  if (!state.products.length) {
+    state.products = defaultProducts;
+    await saveProductsToCloud();
+  }
+
+  clearProductForm();
+  renderAll();
+
+  if (!read(storage.infoSeen, false))
+    byId("infoModal").classList.add("open");
+
+})();
   </script>
 </body>
 </html>
