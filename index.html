@@ -1,3 +1,41 @@
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged }
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+  
+const firebaseConfig = {
+  apiKey: "AIzaSyCQZc42suWda4uAa35C7Z8hgoStFmn9Rrs",
+  authDomain: "adrianshop-c50bb.firebaseapp.com",
+  projectId: "adrianshop-c50bb",
+  storageBucket: "adrianshop-c50bb.firebasestorage.app",
+  messagingSenderId: "323803301457",
+  appId: "1:323803301457:web:f64a7a1afad3c8b07f9a70"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
+  const db = getFirestore(app);
+
+window.firebaseDB = db;
+window.firebaseDoc = doc;
+window.firebaseGetDoc = getDoc;
+window.firebaseSetDoc = setDoc;
+
+window.firebaseAuth = auth;
+window.firebaseProvider = provider;
+window.firebaseSignIn = signInWithPopup;
+window.firebaseOnAuthStateChanged = onAuthStateChanged;
+</script>
+
 <!doctype html>
 <html lang="es">
 <head>
@@ -660,12 +698,29 @@
       { id: 6, name: "Mochila urbana impermeable", category: "Moda", price: 899, oldPrice: 1199, rating: 4.6, description: "Mochila resistente al agua con espacio para laptop, organizadores internos y estilo minimalista para uso diario.", badge: "Popular", image: "https://images.unsplash.com/photo-1622560480605-d83c853bc5c3?auto=format&fit=crop&w=800&q=85", gallery: ["https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=900&q=85"] }
     ];
 
-    const storage = {
-      products: "novaProductsV4",
-      user: "novaCurrentUserV4",
-      users: "novaUsersV4",
-      infoSeen: "novaInfoSeenV4"
-    };
+ const storage = {
+  products: "novaProductsV4",
+  user: "novaCurrentUserV4",
+  users: "novaUsersV4",
+  infoSeen: "novaInfoSeenV4"
+};
+
+async function saveProductsToCloud() {
+  await firebaseSetDoc(
+    firebaseDoc(firebaseDB, "store", "products"),
+    { items: state.products }
+  );
+}
+
+async function loadProductsFromCloud() {
+  const snap = await firebaseGetDoc(
+    firebaseDoc(firebaseDB, "store", "products")
+  );
+
+  if (snap.exists()) {
+    state.products = snap.data().items || [];
+  }
+}
 
     const sellerPhone = "525542910238";
     const byId = (id) => document.getElementById(id);
@@ -947,7 +1002,7 @@
       } else if (deleteId) {
         state.products = state.products.filter((item) => item.id !== Number(deleteId));
         state.cart = state.cart.filter((item) => item.id !== Number(deleteId));
-        saveProducts();
+        await saveProductsToCloud();
         renderAll();
         showToast("Producto quitado");
       }
@@ -1048,7 +1103,7 @@
         gallery: byId("productGallery").value.split("\n").map((url) => url.trim()).filter(Boolean)
       };
       state.products = existingId ? state.products.map((item) => item.id === existingId ? product : item) : [product, ...state.products];
-      saveProducts();
+      await saveProductsToCloud();
       clearProductForm();
       renderAll();
       showToast("Producto guardado");
@@ -1101,9 +1156,22 @@
     });
     if (new URLSearchParams(location.search).get("admin") === "1") window.setTimeout(openAdmin, 300);
 
-    clearProductForm();
-    renderAll();
-    if (!read(storage.infoSeen, false)) byId("infoModal").classList.add("open");
+   (async () => {
+
+  await loadProductsFromCloud();
+
+  if (!state.products.length) {
+    state.products = defaultProducts;
+    await saveProductsToCloud();
+  }
+
+  clearProductForm();
+  renderAll();
+
+  if (!read(storage.infoSeen, false))
+    byId("infoModal").classList.add("open");
+
+})();
   </script>
 </body>
 </html>
