@@ -574,7 +574,7 @@ const saveFavs     = () => save(SK.favorites, state.favorites);
 onSnapshot(doc(db,"store","products"), snap => {
   if (snap.exists()) {
     const items = snap.data().items;
-    if (Array.isArray(items) && items.length) {
+    if (Array.isArray(items)) {
       state.products = items;
       renderCategories();
       renderProducts();
@@ -587,7 +587,7 @@ onSnapshot(doc(db,"store","products"), snap => {
 onSnapshot(doc(db,"store","categories"), snap => {
   if (snap.exists()) {
     const items = snap.data().items;
-    if (Array.isArray(items) && items.length) {
+    if (Array.isArray(items)) {
       state.categories = items;
       save(SK.categories, items);
       renderCategories();
@@ -612,8 +612,16 @@ onSnapshot(
    CLOUD SAVE HELPERS
 ════════════════════════════════════════════ */
 async function cloudSaveProducts() {
-  try { await setDoc(doc(db,"store","products"),{items:state.products}); }
-  catch(e){ console.warn(e); }
+  try {
+    await setDoc(doc(db,"store","products"),{items:state.products});
+    // Render immediately without waiting for the snapshot (snapshot may lag)
+    renderCategories();
+    renderProducts();
+    renderAdminProducts();
+  } catch(e){
+    console.error("Error guardando productos:", e);
+    toast("⚠️ Error al guardar en la nube: " + e.message);
+  }
 }
 async function cloudSaveCategories() {
   try { await setDoc(doc(db,"store","categories"),{items:state.categories}); }
@@ -1137,11 +1145,13 @@ byId("detailAdd").addEventListener("click",()=>{
 
 byId("productForm").addEventListener("submit",async e=>{
   e.preventDefault();
+  const category = byId("productCategory").value;
+  if (!category) { toast("⚠️ Selecciona una categoría antes de guardar"); return; }
   const existId=Number(byId("productId").value);
   const p={
     id:existId||Date.now(),
     name:byId("productName").value.trim(),
-    category:byId("productCategory").value,
+    category,
     price:Number(byId("productPrice").value),
     oldPrice:Number(byId("productOldPrice").value)||0,
     badge:byId("productBadge").value.trim()||"Nuevo",
@@ -1151,7 +1161,7 @@ byId("productForm").addEventListener("submit",async e=>{
   };
   state.products=existId?state.products.map(x=>x.id===existId?p:x):[p,...state.products];
   await cloudSaveProducts();
-  clearProductForm();toast("Producto guardado ✓ (visible en todos los dispositivos)");
+  clearProductForm();toast("✅ Producto guardado (visible en todos los dispositivos)");
 });
 
 byId("resetProductForm").addEventListener("click",clearProductForm);
