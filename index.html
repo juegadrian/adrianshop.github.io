@@ -1,535 +1,238 @@
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged }
-from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-import {
-  getFirestore, doc, getDoc, setDoc
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCQZc42suWda4uAa35C7Z8hgoStFmn9Rrs",
-  authDomain: "adrianshop-c50bb.firebaseapp.com",
-  projectId: "adrianshop-c50bb",
-  storageBucket: "adrianshop-c50bb.firebasestorage.app",
-  messagingSenderId: "323803301457",
-  appId: "1:323803301457:web:f64a7a1afad3c8b07f9a70"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
-const db = getFirestore(app);
-
-window.firebaseDB = db;
-window.firebaseDoc = doc;
-window.firebaseGetDoc = getDoc;
-window.firebaseSetDoc = setDoc;
-window.firebaseAuth = auth;
-window.firebaseProvider = provider;
-window.firebaseSignIn = signInWithPopup;
-window.firebaseOnAuthStateChanged = onAuthStateChanged;
-</script>
-
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Mercado Nova Premium</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;700;900&display=swap" rel="stylesheet"/>
   <style>
-    :root {
-      --navy: #071a33;
-      --navy-2: #0f2e53;
-      --navy-3: #173e6c;
-      --gold: #b8860b;
-      --gold-2: #c99a2e;
-      --gold-3: #8f6508;
-      --gold-light: #f7edd2;
-      --bg: #f4f6fa;
-      --surface: #ffffff;
-      --soft: #eef2f7;
-      --text: #142033;
-      --muted: #687386;
-      --line: #dfe5ee;
-      --success: #167a3a;
-      --danger: #b5471b;
-      --shadow: 0 16px 38px rgba(7,26,51,0.13);
-      --shadow-sm: 0 4px 14px rgba(7,26,51,0.08);
-      --radius: 10px;
-      --radius-sm: 6px;
+    :root{
+      --navy:#071a33;--navy-2:#0f2e53;
+      --gold:#b8860b;--gold-2:#c99a2e;--gold-3:#8f6508;--gold-light:#f7edd2;
+      --bg:#f4f6fa;--surface:#fff;--soft:#eef2f7;
+      --text:#142033;--muted:#687386;--line:#dfe5ee;
+      --success:#167a3a;--danger:#b5471b;
+      --shadow:0 16px 38px rgba(7,26,51,.13);--shadow-sm:0 4px 14px rgba(7,26,51,.08);
+      --r:10px;--rs:6px;
     }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--text)}
+    button,input,textarea,select{font:inherit}
+    button{cursor:pointer}
+    img{max-width:100%;display:block}
+    h1,h2,h3{font-family:'DM Serif Display',Georgia,serif;font-weight:400}
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-    }
-    button, input, textarea, select { font: inherit; }
-    button { cursor: pointer; }
-    img { max-width: 100%; display: block; }
-    h1, h2, h3 { font-family: 'DM Serif Display', Georgia, serif; font-weight: 400; }
+    /* TOPBAR */
+    .topbar{position:sticky;top:0;z-index:30;background:var(--navy);box-shadow:0 4px 24px rgba(7,26,51,.32)}
+    .topbar-inner{width:min(1220px,calc(100% - 32px));margin:0 auto;min-height:70px;display:grid;grid-template-columns:auto 1fr auto auto auto auto;align-items:center;gap:10px;padding:0 4px}
+    .brand{display:flex;align-items:center;gap:10px;color:#fff;font-weight:900;white-space:nowrap;font-family:'DM Serif Display',serif;font-size:1.15rem}
+    .brand-mark{width:38px;height:38px;display:grid;place-items:center;border-radius:var(--rs);background:linear-gradient(135deg,var(--gold-2),var(--gold-3));color:#fff;font-size:1.1rem;font-weight:900}
+    .search{display:flex;overflow:hidden;border-radius:var(--rs);border:2px solid rgba(184,134,11,.35);background:#fff}
+    .search input{flex:1;border:0;outline:0;padding:11px 14px;color:var(--text);font-size:.93rem}
+    .search button{width:50px;border:0;background:linear-gradient(135deg,var(--gold-2),var(--gold));color:#111;font-size:1.1rem}
+    .pill{min-height:38px;border:1px solid rgba(184,134,11,.4);color:#fff;background:rgba(255,255,255,.07);border-radius:999px;padding:8px 13px;display:flex;align-items:center;gap:6px;font-weight:700;font-size:.88rem;white-space:nowrap;transition:background .15s}
+    .pill:hover{background:rgba(255,255,255,.13)}
+    .pill strong{color:#d7ab47}
 
-    /* ── TOPBAR ── */
-    .topbar {
-      position: sticky; top: 0; z-index: 30;
-      background: var(--navy);
-      box-shadow: 0 4px 24px rgba(7,26,51,0.32);
-    }
-    .topbar-inner {
-      width: min(1220px, calc(100% - 32px));
-      margin: 0 auto;
-      min-height: 70px;
-      display: grid;
-      grid-template-columns: auto 1fr auto auto auto auto;
-      align-items: center;
-      gap: 10px;
-    }
-    .brand {
-      display: flex; align-items: center; gap: 10px;
-      color: #fff; font-weight: 900; white-space: nowrap;
-      font-family: 'DM Serif Display', serif; font-size: 1.15rem;
-    }
-    .brand-mark {
-      width: 38px; height: 38px;
-      display: grid; place-items: center;
-      border-radius: var(--radius-sm);
-      background: linear-gradient(135deg, var(--gold-2), var(--gold-3));
-      color: #fff; font-size: 1.1rem; font-weight: 900;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);
-    }
-    .search {
-      display: flex; overflow: hidden;
-      border-radius: var(--radius-sm);
-      border: 2px solid rgba(184,134,11,0.35);
-      background: #fff;
-    }
-    .search input {
-      flex: 1; border: 0; outline: 0;
-      padding: 11px 14px; color: var(--text); font-size: 0.93rem;
-    }
-    .search button {
-      width: 50px; border: 0;
-      background: linear-gradient(135deg, var(--gold-2), var(--gold));
-      color: #111; font-size: 1.1rem;
-    }
-    .pill {
-      min-height: 38px;
-      border: 1px solid rgba(184,134,11,0.4);
-      color: #fff; background: rgba(255,255,255,0.07);
-      border-radius: 999px; padding: 8px 13px;
-      display: flex; align-items: center; gap: 6px;
-      font-weight: 700; font-size: 0.88rem; white-space: nowrap;
-      transition: background 0.15s;
-    }
-    .pill:hover { background: rgba(255,255,255,0.13); }
-    .pill strong { color: #d7ab47; }
+    /* HERO */
+    .hero{background:linear-gradient(130deg,rgba(7,26,51,.97),rgba(15,46,83,.91)),url("https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1600&q=85") center/cover;color:#fff;border-bottom:3px solid var(--gold)}
+    .hero-inner{width:min(1220px,calc(100% - 32px));margin:0 auto;min-height:300px;padding:40px 0 32px;display:grid;grid-template-columns:1fr 320px;gap:24px;align-items:center}
+    .hero-copy{display:grid;gap:14px}
+    .eyebrow{color:#d7ab47;font-weight:700;text-transform:uppercase;font-size:.75rem;letter-spacing:1px}
+    .hero-copy h1{font-size:clamp(1.9rem,3.8vw,3.4rem);line-height:1.07;color:#fff}
+    .hero-copy p{color:#dce6f2;font-size:1rem;line-height:1.6;max-width:640px}
+    .hero-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+    .btn-primary{border:0;border-radius:var(--rs);padding:11px 20px;background:linear-gradient(135deg,var(--gold-2),var(--gold));color:#111827;font-weight:900;font-size:.95rem;transition:opacity .15s}
+    .btn-primary:hover{opacity:.88}
+    .btn-secondary{border:1px solid rgba(184,134,11,.45);border-radius:var(--rs);padding:11px 20px;background:rgba(255,255,255,.08);color:#fff;font-weight:700}
+    .deal-card{border-radius:var(--r);overflow:hidden;background:#fff;color:var(--text);box-shadow:var(--shadow)}
+    .deal-card img{width:100%;height:160px;object-fit:cover}
+    .deal-body{padding:14px}
+    .deal-body strong{display:block;margin-bottom:4px;font-size:.97rem}
+    .deal-body span{color:var(--success);font-weight:700;font-size:.88rem}
 
-    /* ── HERO ── */
-    .hero {
-      background:
-        linear-gradient(130deg, rgba(7,26,51,0.97), rgba(15,46,83,0.91)),
-        url("https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1600&q=85") center/cover;
-      color: #fff;
-      border-bottom: 3px solid var(--gold);
-    }
-    .hero-inner {
-      width: min(1220px, calc(100% - 32px));
-      margin: 0 auto;
-      min-height: 300px;
-      padding: 40px 0 32px;
-      display: grid;
-      grid-template-columns: 1fr 320px;
-      gap: 24px; align-items: center;
-    }
-    .hero-copy { display: grid; gap: 14px; }
-    .eyebrow {
-      color: #d7ab47; font-weight: 700;
-      text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px;
-    }
-    .hero-copy h1 {
-      font-size: clamp(1.9rem, 3.8vw, 3.4rem);
-      line-height: 1.07; color: #fff;
-    }
-    .hero-copy p { color: #dce6f2; font-size: 1rem; line-height: 1.6; max-width: 640px; }
-    .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
-    .btn-primary {
-      border: 0; border-radius: var(--radius-sm); padding: 11px 20px;
-      background: linear-gradient(135deg, var(--gold-2), var(--gold));
-      color: #111827; font-weight: 900; font-size: 0.95rem;
-      transition: opacity 0.15s;
-    }
-    .btn-primary:hover { opacity: 0.88; }
-    .btn-secondary {
-      border: 1px solid rgba(184,134,11,0.45); border-radius: var(--radius-sm);
-      padding: 11px 20px; background: rgba(255,255,255,0.08);
-      color: #fff; font-weight: 700;
-    }
-    .deal-card {
-      border-radius: var(--radius); overflow: hidden;
-      background: #fff; color: var(--text); box-shadow: var(--shadow);
-    }
-    .deal-card img { width: 100%; height: 160px; object-fit: cover; }
-    .deal-body { padding: 14px; }
-    .deal-body strong { display: block; margin-bottom: 4px; font-size: 0.97rem; }
-    .deal-body span { color: var(--success); font-weight: 700; font-size: 0.88rem; }
+    /* MAIN */
+    main{width:min(1220px,calc(100% - 32px));margin:28px auto 60px}
 
-    /* ── MAIN LAYOUT ── */
-    main { width: min(1220px, calc(100% - 32px)); margin: 28px auto 60px; }
+    /* TABS */
+    .tabs{display:flex;gap:4px;margin-bottom:24px;border-bottom:2px solid var(--line)}
+    .tab-btn{padding:10px 18px;border:0;background:transparent;color:var(--muted);font-weight:700;font-size:.93rem;border-bottom:3px solid transparent;margin-bottom:-2px;border-radius:var(--rs) var(--rs) 0 0;transition:color .15s}
+    .tab-btn.active{color:var(--navy);border-bottom-color:var(--gold)}
+    .tab-panel{display:none}
+    .tab-panel.active{display:block}
 
-    /* ── TABS ── */
-    .tabs {
-      display: flex; gap: 4px; margin-bottom: 24px;
-      border-bottom: 2px solid var(--line); padding-bottom: 0;
-    }
-    .tab-btn {
-      padding: 10px 18px; border: 0; background: transparent;
-      color: var(--muted); font-weight: 700; font-size: 0.93rem;
-      border-bottom: 3px solid transparent; margin-bottom: -2px;
-      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-      transition: color 0.15s;
-    }
-    .tab-btn.active { color: var(--navy); border-bottom-color: var(--gold); }
-    .tab-btn:hover { color: var(--text); }
-    .tab-panel { display: none; }
-    .tab-panel.active { display: block; }
+    /* SHOP */
+    .shop-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:22px;align-items:start}
+    .toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px;flex-wrap:wrap}
+    .toolbar h2{font-size:1.5rem}
+    .categories{display:flex;flex-wrap:wrap;gap:8px}
+    .chip{border:1px solid var(--line);background:#fff;color:#334155;border-radius:999px;padding:7px 14px;font-weight:700;font-size:.85rem;white-space:nowrap;transition:all .15s}
+    .chip:hover{border-color:var(--gold)}
+    .chip.active{background:var(--gold-light);border-color:var(--gold);color:var(--navy)}
 
-    /* ── SHOP TAB ── */
-    .shop-layout {
-      display: grid;
-      grid-template-columns: minmax(0,1fr) 340px;
-      gap: 22px; align-items: start;
-    }
-    .toolbar {
-      display: flex; align-items: center;
-      justify-content: space-between; gap: 14px; margin-bottom: 16px;
-      flex-wrap: wrap;
-    }
-    .toolbar h2 { font-size: 1.5rem; }
-    .categories { display: flex; flex-wrap: wrap; gap: 8px; }
-    .chip {
-      border: 1px solid var(--line); background: #fff;
-      color: #334155; border-radius: 999px;
-      padding: 7px 14px; font-weight: 700; font-size: 0.85rem;
-      white-space: nowrap; transition: all 0.15s;
-    }
-    .chip:hover { border-color: var(--gold); }
-    .chip.active {
-      background: var(--gold-light); border-color: var(--gold);
-      color: var(--navy);
-    }
+    /* GRID */
+    .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+    .product-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow-sm);transition:transform .16s,box-shadow .16s;position:relative}
+    .product-card:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+    .product-card.hot{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),var(--shadow)}
+    .hot-ribbon{position:absolute;top:0;right:0;background:linear-gradient(135deg,var(--gold-2),var(--gold));color:#111;font-size:.72rem;font-weight:900;padding:5px 10px;border-radius:0 var(--r) 0 var(--rs);z-index:2}
+    .product-image{aspect-ratio:1.1/1;position:relative;overflow:hidden;background:var(--soft)}
+    .product-image img{width:100%;height:100%;object-fit:cover}
+    .badge{position:absolute;top:10px;left:10px;border-radius:999px;padding:5px 10px;background:rgba(7,26,51,.9);color:#d7ab47;font-size:.75rem;font-weight:900;z-index:1}
+    .fav-btn{position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:50%;border:0;background:rgba(255,255,255,.9);font-size:1.1rem;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-sm);z-index:2;transition:transform .15s}
+    .fav-btn:hover{transform:scale(1.15)}
+    .fav-btn.active{background:#fff0ea}
+    .product-info{padding:14px;display:grid;gap:8px;flex:1}
+    .review-count{color:var(--muted);font-size:.85rem;font-weight:700}
+    .product-title{font-size:.97rem;line-height:1.35;font-weight:700}
+    .meta{color:var(--muted);font-size:.85rem;line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+    .price-row{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+    .price{font-size:1.28rem;font-weight:900;color:var(--navy)}
+    .old-price{color:var(--muted);text-decoration:line-through;font-size:.88rem}
+    .shipping{color:var(--success);font-weight:700;font-size:.84rem}
+    .btn-add{margin-top:auto;min-height:40px;width:100%;border:0;border-radius:var(--rs);background:var(--navy);color:#fff;font-weight:900;transition:background .15s}
+    .btn-add:hover{background:var(--navy-2)}
 
-    /* ── PRODUCT GRID ── */
-    .grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; }
+    /* CART PANEL */
+    .cart-panel{position:sticky;top:86px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow-sm);overflow:hidden}
+    .panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 16px;border-bottom:1px solid var(--line)}
+    .panel-head h2{font-size:1.2rem}
+    .order-list{max-height:380px;overflow-y:auto}
+    .order-item{display:grid;grid-template-columns:60px 1fr auto;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
+    .order-item img{width:60px;height:60px;object-fit:cover;border-radius:var(--rs);background:var(--soft)}
+    .order-name{font-weight:700;font-size:.89rem;line-height:1.3;overflow-wrap:anywhere}
+    .order-price{color:var(--muted);font-size:.83rem;margin-top:3px}
+    .btn-remove{border:0;width:32px;height:32px;border-radius:50%;background:#fff0ea;color:var(--danger);font-size:1.1rem;font-weight:900}
+    .summary{padding:14px 16px;display:grid;gap:9px;background:#fbfcff;border-top:1px solid var(--line)}
+    .summary-row{display:flex;justify-content:space-between;gap:12px;color:#3d4a5c;font-size:.92rem}
+    .summary-row.total{padding-top:8px;border-top:1px solid var(--line);color:var(--text);font-size:1.08rem;font-weight:900}
+    .btn-checkout{border:0;border-radius:var(--rs);padding:12px 16px;min-height:44px;background:linear-gradient(135deg,var(--gold-2),var(--gold));color:#111827;font-weight:900;font-size:.96rem;transition:opacity .15s}
+    .btn-checkout:hover{opacity:.88}
+    .small{color:var(--muted);font-size:.82rem;line-height:1.45}
+    .empty{padding:20px 16px;color:var(--muted);font-size:.9rem;line-height:1.5}
 
-    .product-card {
-      background: var(--surface); border: 1px solid var(--line);
-      border-radius: var(--radius); overflow: hidden;
-      display: flex; flex-direction: column;
-      box-shadow: var(--shadow-sm);
-      transition: transform 0.16s, box-shadow 0.16s;
-      position: relative;
-    }
-    .product-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+    /* FAVORITES */
+    .fav-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+    .fav-empty{grid-column:1/-1;text-align:center;padding:48px 20px;color:var(--muted);font-size:1rem;line-height:1.6}
+    .fav-empty span{display:block;font-size:2.5rem;margin-bottom:10px}
 
-    /* Hot / most-purchased highlight */
-    .product-card.hot {
-      border-color: var(--gold);
-      box-shadow: 0 0 0 2px var(--gold), var(--shadow);
-    }
-    .hot-ribbon {
-      position: absolute; top: 0; right: 0;
-      background: linear-gradient(135deg, var(--gold-2), var(--gold));
-      color: #111; font-size: 0.72rem; font-weight: 900;
-      padding: 5px 10px; border-radius: 0 var(--radius) 0 var(--radius-sm);
-      z-index: 2; letter-spacing: 0.5px;
-    }
+    /* ACCOUNT */
+    .account-layout{display:grid;grid-template-columns:340px minmax(0,1fr);gap:20px;align-items:start}
+    .panel-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm)}
+    .panel-body{padding:16px;display:grid;gap:12px}
+    .field{display:grid;gap:5px}
+    .field label{color:#334155;font-size:.84rem;font-weight:700}
+    .field input,.field textarea,.field select{width:100%;border:1px solid var(--line);border-radius:var(--rs);padding:10px 12px;background:#fff;color:var(--text);outline-color:var(--gold);font-size:.92rem}
+    .field textarea{min-height:88px;resize:vertical}
+    .btn-submit{border:0;border-radius:var(--rs);padding:11px 16px;min-height:42px;background:linear-gradient(135deg,var(--gold-2),var(--gold));color:#111827;font-weight:900}
+    .btn-ghost{border:1px solid var(--line);border-radius:var(--rs);padding:10px 14px;min-height:40px;background:#fff;color:var(--navy);font-weight:700}
+    .btn-dark{border:0;border-radius:var(--rs);padding:10px 14px;min-height:40px;background:var(--navy);color:#fff;font-weight:700}
+    .btn-danger{border:0;border-radius:var(--rs);padding:10px 14px;min-height:40px;background:#fff0ea;color:var(--danger);font-weight:700}
+    .btn-success{border:0;border-radius:var(--rs);padding:10px 14px;min-height:40px;background:#e6f4ec;color:var(--success);font-weight:700}
+    .disabled-note{padding:12px 14px;border-radius:var(--rs);background:#f0f4fa;border:1px dashed var(--line);color:var(--muted);font-size:.85rem;text-align:center}
+    .purchase-list{display:grid;gap:10px}
+    .purchase-item{display:grid;grid-template-columns:66px 1fr auto;gap:12px;padding:12px;border:1px solid var(--line);border-radius:var(--rs);background:#fff;align-items:center}
+    .purchase-item img{width:66px;height:66px;object-fit:cover;border-radius:var(--rs)}
+    .purchase-item strong{display:block;margin-bottom:3px;font-size:.92rem}
+    .review-item{display:grid;grid-template-columns:62px 1fr;gap:12px;padding:12px;border:1px solid var(--line);border-radius:var(--rs);background:#fff}
+    .review-photo{width:62px;height:62px;object-fit:cover;border-radius:var(--rs)}
+    .review-item strong{display:block;margin-bottom:3px;font-size:.9rem}
+    .verified{color:var(--success);font-weight:700;font-size:.82rem}
 
-    .product-image { aspect-ratio: 1.1/1; position: relative; overflow: hidden; background: var(--soft); }
-    .product-image img { width: 100%; height: 100%; object-fit: cover; }
-    .badge {
-      position: absolute; top: 10px; left: 10px;
-      border-radius: 999px; padding: 5px 10px;
-      background: rgba(7,26,51,0.9); color: #d7ab47;
-      font-size: 0.75rem; font-weight: 900; z-index: 1;
-    }
-    .fav-btn {
-      position: absolute; top: 10px; right: 10px;
-      width: 34px; height: 34px; border-radius: 50%;
-      border: 0; background: rgba(255,255,255,0.9);
-      font-size: 1.1rem; display: flex; align-items: center; justify-content: center;
-      box-shadow: var(--shadow-sm); z-index: 2;
-      transition: transform 0.15s, background 0.15s;
-    }
-    .fav-btn:hover { transform: scale(1.15); }
-    .fav-btn.active { background: #fff0ea; }
+    /* REVIEW REQUEST PENDING */
+    .review-request{display:grid;grid-template-columns:66px 1fr auto;gap:12px;padding:14px;border:1px solid var(--line);border-radius:var(--rs);background:#fff;align-items:center}
+    .review-request img{width:66px;height:66px;object-fit:cover;border-radius:var(--rs)}
+    .review-request.pending{border-color:#f0ad4e;background:#fffbf0}
+    .review-request.approved{border-color:var(--success);background:#f0faf4}
+    .status-badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.75rem;font-weight:900}
+    .status-pending{background:#fff3cd;color:#856404}
+    .status-approved{background:#d1fae5;color:#065f46}
+    .status-rejected{background:#fee2e2;color:#991b1b}
 
-    .product-info { padding: 14px; display: grid; gap: 8px; flex: 1; }
-    .review-count { color: var(--muted); font-size: 0.85rem; font-weight: 700; }
-    .product-title { font-size: 0.97rem; line-height: 1.35; font-weight: 700; }
-    .meta { color: var(--muted); font-size: 0.85rem; line-height: 1.45; }
-    .price-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-    .price { font-size: 1.28rem; font-weight: 900; color: var(--navy); }
-    .old-price { color: var(--muted); text-decoration: line-through; font-size: 0.88rem; }
-    .shipping { color: var(--success); font-weight: 700; font-size: 0.84rem; }
-    .btn-add {
-      margin-top: auto; min-height: 40px; width: 100%;
-      border: 0; border-radius: var(--radius-sm);
-      background: var(--navy); color: #fff; font-weight: 900;
-      transition: background 0.15s;
-    }
-    .btn-add:hover { background: var(--navy-2); }
+    /* MODALS */
+    .modal{position:fixed;inset:0;z-index:50;display:none;background:rgba(7,26,51,.74);padding:16px;overflow-y:auto}
+    .modal.open{display:block}
+    .modal-card{width:min(960px,100%);margin:16px auto;background:#fff;border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+    .modal-head{padding:15px 18px;display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--navy);color:#fff}
+    .modal-head h2{font-size:1.25rem;color:#fff}
+    .modal-head span{color:#d7ab47;font-size:.9rem}
+    .detail-grid{display:grid;grid-template-columns:1fr 340px;gap:18px;padding:18px}
+    .gallery-main{width:100%;aspect-ratio:1.25/1;object-fit:cover;border-radius:var(--r);background:var(--soft)}
+    .thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:8px}
+    .thumbs img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:var(--rs);border:2px solid transparent;cursor:pointer}
+    .thumbs img.active{border-color:var(--gold)}
+    .detail-side{display:grid;gap:12px;align-content:start}
+    .detail-reviews{grid-column:1/-1;display:grid;gap:10px}
 
-    /* ── CART PANEL (sidebar) ── */
-    .cart-panel {
-      position: sticky; top: 86px;
-      background: var(--surface); border: 1px solid var(--line);
-      border-radius: var(--radius); box-shadow: var(--shadow-sm);
-      overflow: hidden;
-    }
-    .panel-head {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 12px; padding: 15px 16px; border-bottom: 1px solid var(--line);
-    }
-    .panel-head h2 { font-size: 1.2rem; }
-    .order-list { max-height: 380px; overflow-y: auto; }
-    .order-item {
-      display: grid; grid-template-columns: 60px 1fr auto;
-      gap: 10px; align-items: center;
-      padding: 12px 16px; border-bottom: 1px solid var(--line);
-    }
-    .order-item img {
-      width: 60px; height: 60px; object-fit: cover;
-      border-radius: var(--radius-sm); background: var(--soft);
-    }
-    .order-name { font-weight: 700; font-size: 0.89rem; line-height: 1.3; overflow-wrap: anywhere; }
-    .order-price { color: var(--muted); font-size: 0.83rem; margin-top: 3px; }
-    .btn-remove {
-      border: 0; width: 32px; height: 32px; border-radius: 50%;
-      background: #fff0ea; color: var(--danger);
-      font-size: 1.1rem; font-weight: 900;
-    }
-    .summary {
-      padding: 14px 16px; display: grid; gap: 9px;
-      background: #fbfcff; border-top: 1px solid var(--line);
-    }
-    .summary-row { display: flex; justify-content: space-between; gap: 12px; color: #3d4a5c; font-size: 0.92rem; }
-    .summary-row.total {
-      padding-top: 8px; border-top: 1px solid var(--line);
-      color: var(--text); font-size: 1.08rem; font-weight: 900;
-    }
-    .btn-checkout {
-      border: 0; border-radius: var(--radius-sm);
-      padding: 12px 16px; min-height: 44px;
-      background: linear-gradient(135deg, var(--gold-2), var(--gold));
-      color: #111827; font-weight: 900; font-size: 0.96rem;
-      transition: opacity 0.15s;
-    }
-    .btn-checkout:hover { opacity: 0.88; }
-    .small { color: var(--muted); font-size: 0.82rem; line-height: 1.45; }
-    .empty { padding: 20px 16px; color: var(--muted); font-size: 0.9rem; line-height: 1.5; }
+    /* ADMIN */
+    .admin-overlay{position:fixed;inset:0;z-index:55;display:none;background:rgba(7,26,51,.74);padding:16px;overflow-y:auto}
+    .admin-overlay.open{display:block}
+    .admin-shell{width:min(1100px,100%);margin:16px auto;background:#fff;border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+    .admin-title{background:var(--navy);color:#fff;padding:16px 18px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .admin-title h2{font-size:1.2rem;color:#fff}
+    .admin-title span{color:#d7ab47;font-size:.88rem}
+    .admin-tabs{display:flex;border-bottom:2px solid var(--line);padding:0 18px}
+    .admin-tab{padding:10px 16px;border:0;background:transparent;color:var(--muted);font-weight:700;font-size:.9rem;border-bottom:3px solid transparent;margin-bottom:-2px;transition:color .15s}
+    .admin-tab.active{color:var(--navy);border-bottom-color:var(--gold)}
+    .admin-section{display:none;padding:18px}
+    .admin-section.active{display:block}
+    .admin-grid{display:grid;grid-template-columns:370px 1fr;gap:18px}
+    .admin-form{display:grid;gap:10px}
+    .admin-2col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .admin-list{display:grid;gap:10px;max-height:640px;overflow-y:auto}
+    .admin-product{display:grid;grid-template-columns:66px 1fr auto;gap:12px;padding:12px;border:1px solid var(--line);border-radius:var(--rs);background:#fff;align-items:center}
+    .admin-product img{width:66px;height:66px;object-fit:cover;border-radius:var(--rs)}
+    .admin-product strong{display:block;margin-bottom:3px;font-size:.9rem}
+    .btn-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .cat-layout{display:grid;grid-template-columns:280px 1fr;gap:18px}
+    .cat-form{display:grid;gap:10px}
+    .cat-list{display:grid;gap:8px}
+    .cat-item{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border:1px solid var(--line);border-radius:var(--rs);background:#fff}
+    .cat-item span{font-weight:700;font-size:.93rem}
 
-    /* ── FAVORITES TAB ── */
-    .fav-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; }
-    .fav-empty {
-      grid-column: 1/-1; text-align: center; padding: 48px 20px;
-      color: var(--muted); font-size: 1rem; line-height: 1.6;
-    }
-    .fav-empty span { display: block; font-size: 2.5rem; margin-bottom: 10px; }
+    /* REVIEW REQUESTS IN ADMIN */
+    .req-list{display:grid;gap:12px}
+    .req-card{display:grid;grid-template-columns:80px 1fr auto;gap:14px;padding:14px;border:1px solid var(--line);border-radius:var(--rs);background:#fff;align-items:start}
+    .req-card img{width:80px;height:80px;object-fit:cover;border-radius:var(--rs)}
+    .req-card.pending{border-left:4px solid #f0ad4e}
+    .req-card.approved{border-left:4px solid var(--success)}
+    .req-card.rejected{border-left:4px solid var(--danger)}
+    .req-info strong{display:block;margin-bottom:4px}
+    .req-info .small{margin-bottom:6px}
+    .req-actions{display:grid;gap:6px}
 
-    /* ── ACCOUNT TAB ── */
-    .account-layout {
-      display: grid; grid-template-columns: 340px minmax(0,1fr);
-      gap: 20px; align-items: start;
-    }
-    .panel-card {
-      background: var(--surface); border: 1px solid var(--line);
-      border-radius: var(--radius); overflow: hidden;
-      box-shadow: var(--shadow-sm);
-    }
-    .panel-body { padding: 16px; display: grid; gap: 12px; }
-    .field { display: grid; gap: 5px; }
-    .field label { color: #334155; font-size: 0.84rem; font-weight: 700; }
-    .field input, .field textarea, .field select {
-      width: 100%; border: 1px solid var(--line);
-      border-radius: var(--radius-sm); padding: 10px 12px;
-      background: #fff; color: var(--text); outline-color: var(--gold);
-      font-size: 0.92rem;
-    }
-    .field textarea { min-height: 88px; resize: vertical; }
-    .btn-submit {
-      border: 0; border-radius: var(--radius-sm); padding: 11px 16px;
-      min-height: 42px;
-      background: linear-gradient(135deg, var(--gold-2), var(--gold));
-      color: #111827; font-weight: 900;
-    }
-    .btn-ghost {
-      border: 1px solid var(--line); border-radius: var(--radius-sm);
-      padding: 10px 14px; min-height: 40px;
-      background: #fff; color: var(--navy); font-weight: 700;
-    }
-    .btn-dark {
-      border: 0; border-radius: var(--radius-sm); padding: 10px 14px; min-height: 40px;
-      background: var(--navy); color: #fff; font-weight: 700;
-    }
-    .btn-danger {
-      border: 0; border-radius: var(--radius-sm); padding: 10px 14px; min-height: 40px;
-      background: #fff0ea; color: var(--danger); font-weight: 700;
-    }
-    .disabled-note {
-      padding: 12px 14px; border-radius: var(--radius-sm);
-      background: #f0f4fa; border: 1px dashed var(--line);
-      color: var(--muted); font-size: 0.85rem; text-align: center;
-    }
+    /* BADGE COUNT */
+    .notif-dot{display:inline-flex;align-items:center;justify-content:center;background:#e53e3e;color:#fff;border-radius:999px;font-size:.7rem;font-weight:900;min-width:18px;height:18px;padding:0 4px;margin-left:2px}
 
-    /* purchases */
-    .purchase-list { display: grid; gap: 10px; }
-    .purchase-item {
-      display: grid; grid-template-columns: 66px 1fr auto;
-      gap: 12px; padding: 12px;
-      border: 1px solid var(--line); border-radius: var(--radius-sm);
-      background: #fff; align-items: center;
-    }
-    .purchase-item img { width: 66px; height: 66px; object-fit: cover; border-radius: var(--radius-sm); }
-    .purchase-item strong { display: block; margin-bottom: 3px; font-size: 0.92rem; }
-    .review-item {
-      display: grid; grid-template-columns: 62px 1fr;
-      gap: 12px; padding: 12px;
-      border: 1px solid var(--line); border-radius: var(--radius-sm); background: #fff;
-    }
-    .review-photo { width: 62px; height: 62px; object-fit: cover; border-radius: var(--radius-sm); }
-    .review-item strong { display: block; margin-bottom: 3px; font-size: 0.9rem; }
-    .verified { color: var(--success); font-weight: 700; font-size: 0.82rem; }
+    /* HOTSPOT & TOAST */
+    .owner-hotspot{position:fixed;left:0;bottom:0;width:20px;height:20px;opacity:0;z-index:45;border:0;background:transparent}
+    .toast{position:fixed;left:50%;bottom:22px;z-index:80;max-width:min(90vw,440px);transform:translateX(-50%) translateY(18px);opacity:0;pointer-events:none;background:var(--navy);color:#fff;padding:12px 16px;border-radius:var(--rs);box-shadow:var(--shadow);text-align:center;font-size:.9rem;transition:opacity .18s,transform .18s}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-    /* ── MODALS ── */
-    .modal {
-      position: fixed; inset: 0; z-index: 50; display: none;
-      background: rgba(7,26,51,0.74); padding: 16px; overflow-y: auto;
-    }
-    .modal.open { display: block; }
-    .modal-card {
-      width: min(960px,100%); margin: 16px auto;
-      background: #fff; border-radius: var(--radius);
-      box-shadow: var(--shadow); overflow: hidden;
-    }
-    .modal-head {
-      padding: 15px 18px; display: flex; justify-content: space-between;
-      align-items: center; gap: 12px;
-      background: var(--navy); color: #fff;
-    }
-    .modal-head h2 { font-size: 1.25rem; color: #fff; }
-    .modal-head span { color: #d7ab47; font-size: 0.9rem; }
-    .detail-grid {
-      display: grid; grid-template-columns: 1fr 340px;
-      gap: 18px; padding: 18px;
-    }
-    .gallery-main {
-      width: 100%; aspect-ratio: 1.25/1; object-fit: cover;
-      border-radius: var(--radius); background: var(--soft);
-    }
-    .thumbs { display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; margin-top: 8px; }
-    .thumbs img {
-      width: 100%; aspect-ratio: 1/1; object-fit: cover;
-      border-radius: var(--radius-sm); border: 2px solid transparent; cursor: pointer;
-    }
-    .thumbs img.active { border-color: var(--gold); }
-    .detail-side { display: grid; gap: 12px; align-content: start; }
-    .detail-reviews { grid-column: 1/-1; display: grid; gap: 10px; }
+    /* SYNC INDICATOR */
+    .sync-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;margin-left:6px;animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
-    /* ── ADMIN OVERLAY ── */
-    .admin-overlay {
-      position: fixed; inset: 0; z-index: 55; display: none;
-      background: rgba(7,26,51,0.74); padding: 16px; overflow-y: auto;
+    /* RESPONSIVE */
+    @media(max-width:1020px){
+      .shop-layout,.account-layout,.detail-grid,.admin-grid,.cat-layout{grid-template-columns:1fr}
+      .cart-panel{position:static}
+      .grid,.fav-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .detail-reviews{grid-column:auto}
+      .req-card{grid-template-columns:70px 1fr;}.req-actions{grid-column:1/-1;flex-direction:row;display:flex;gap:8px}
     }
-    .admin-overlay.open { display: block; }
-    .admin-shell {
-      width: min(1080px,100%); margin: 16px auto;
-      background: #fff; border-radius: var(--radius); overflow: hidden;
-      box-shadow: var(--shadow);
-    }
-    .admin-title {
-      background: var(--navy); color: #fff; padding: 16px 18px;
-      display: flex; justify-content: space-between; align-items: center; gap: 12px;
-    }
-    .admin-title h2 { font-size: 1.2rem; color: #fff; }
-    .admin-title span { color: #d7ab47; font-size: 0.88rem; }
-
-    /* admin tabs */
-    .admin-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--line); padding: 0 18px; }
-    .admin-tab {
-      padding: 10px 16px; border: 0; background: transparent;
-      color: var(--muted); font-weight: 700; font-size: 0.9rem;
-      border-bottom: 3px solid transparent; margin-bottom: -2px;
-      transition: color 0.15s;
-    }
-    .admin-tab.active { color: var(--navy); border-bottom-color: var(--gold); }
-
-    .admin-section { display: none; padding: 18px; }
-    .admin-section.active { display: block; }
-
-    /* products section */
-    .admin-grid { display: grid; grid-template-columns: 370px 1fr; gap: 18px; }
-    .admin-form { display: grid; gap: 10px; }
-    .admin-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .admin-list { display: grid; gap: 10px; max-height: 640px; overflow-y: auto; }
-    .admin-product {
-      display: grid; grid-template-columns: 66px 1fr auto;
-      gap: 12px; padding: 12px;
-      border: 1px solid var(--line); border-radius: var(--radius-sm);
-      background: #fff; align-items: center;
-    }
-    .admin-product img { width: 66px; height: 66px; object-fit: cover; border-radius: var(--radius-sm); }
-    .admin-product strong { display: block; margin-bottom: 3px; font-size: 0.9rem; }
-    .btn-actions { display: flex; gap: 8px; }
-
-    /* categories section */
-    .cat-layout { display: grid; grid-template-columns: 280px 1fr; gap: 18px; }
-    .cat-form { display: grid; gap: 10px; }
-    .cat-list { display: grid; gap: 8px; }
-    .cat-item {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 11px 14px; border: 1px solid var(--line);
-      border-radius: var(--radius-sm); background: #fff;
-    }
-    .cat-item span { font-weight: 700; font-size: 0.93rem; }
-
-    /* ── HOTSPOT & TOAST ── */
-    .owner-hotspot {
-      position: fixed; left: 0; bottom: 0;
-      width: 20px; height: 20px; opacity: 0; z-index: 45; border: 0; background: transparent;
-    }
-    .toast {
-      position: fixed; left: 50%; bottom: 22px; z-index: 80;
-      max-width: min(90vw,440px);
-      transform: translateX(-50%) translateY(18px);
-      opacity: 0; pointer-events: none;
-      background: var(--navy); color: #fff;
-      padding: 12px 16px; border-radius: var(--radius-sm);
-      box-shadow: var(--shadow); text-align: center; font-size: 0.9rem;
-      transition: opacity 0.18s, transform 0.18s;
-    }
-    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-    /* ── RESPONSIVE ── */
-    @media (max-width: 1020px) {
-      .shop-layout, .account-layout, .detail-grid, .admin-grid, .cat-layout { grid-template-columns: 1fr; }
-      .cart-panel { position: static; }
-      .grid, .fav-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
-      .detail-reviews { grid-column: auto; }
-    }
-    @media (max-width: 700px) {
-      .topbar-inner { grid-template-columns: 1fr auto auto auto; gap: 8px; padding: 8px 0; }
-      .brand span:last-child { display: none; }
-      .search { grid-column: 1/-1; order: 6; }
-      .hero-inner { grid-template-columns: 1fr; }
-      .deal-card { display: none; }
-      .grid, .fav-grid { grid-template-columns: 1fr; }
-      .product-card { display: grid; grid-template-columns: 120px 1fr; }
-      .product-image { aspect-ratio: auto; min-height: 180px; height: 100%; }
-      .admin-2col { grid-template-columns: 1fr; }
-      .purchase-item { grid-template-columns: 56px 1fr; }
-      .purchase-item .btn-actions { grid-column: 1/-1; }
+    @media(max-width:700px){
+      .topbar-inner{grid-template-columns:1fr auto auto auto;gap:8px;padding:8px 0;flex-wrap:wrap;width:calc(100% - 24px)}
+      .brand span:last-child{display:none}
+      .search{grid-column:1/-1;order:5;width:100%}
+      .hero-inner{grid-template-columns:1fr}
+      .deal-card{display:none}
+      .grid,.fav-grid{grid-template-columns:1fr}
+      .product-card{display:grid;grid-template-columns:120px 1fr}
+      .product-image{aspect-ratio:auto;min-height:180px;height:100%}
+      .admin-2col{grid-template-columns:1fr}
+      .purchase-item{grid-template-columns:56px 1fr}
+      .purchase-item .btn-actions{grid-column:1/-1}
     }
   </style>
 </head>
@@ -540,10 +243,10 @@ window.firebaseOnAuthStateChanged = onAuthStateChanged;
   <div class="topbar-inner">
     <div class="brand"><span class="brand-mark">M</span><span>Mercado Nova Premium</span></div>
     <form class="search" id="searchForm">
-      <input id="searchInput" type="search" placeholder="Buscar productos premium" />
+      <input id="searchInput" type="search" placeholder="Buscar productos premium"/>
       <button type="submit">⌕</button>
     </form>
-    <button class="pill" id="tabShop">🛍 Tienda</button>
+    <button class="pill" id="tabShopBtn">🛍 Tienda</button>
     <button class="pill" id="tabFavBtn">♡ Favoritos <strong id="favCount">0</strong></button>
     <button class="pill" id="tabCartBtn">🛒 Carrito <strong id="cartCount">0</strong></button>
     <button class="pill" id="tabAccountBtn">Cuenta</button>
@@ -555,18 +258,18 @@ window.firebaseOnAuthStateChanged = onAuthStateChanged;
   <div class="hero-inner">
     <div class="hero-copy">
       <div class="eyebrow">Entrega personal · Productos seleccionados</div>
-      <h1>Compra premium. Recibe en 2-4 días.</h1>
-      <p>Los productos se entregan en persona. Cada compra te da una reseña disponible; publícala con foto y acumula beneficios en la tienda.</p>
+      <h1 id="heroTitle">Compra premium. Recibe en 2-4 días.</h1>
+      <p id="heroDesc">Los productos se entregan en persona. Cada compra te da una reseña disponible; publícala con foto y acumula beneficios.</p>
       <div class="hero-actions">
-        <button class="btn-primary" id="shopNow">Ver productos</button>
+        <button class="btn-primary" id="shopNow"><span id="heroBtn1">Ver productos</span></button>
         <button class="btn-secondary" id="openInfo">Cómo funciona</button>
       </div>
     </div>
     <article class="deal-card">
-      <img src="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=900&q=85" alt="Laptop" />
+      <img id="heroDealImg" src="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=900&q=85" alt="Laptop"/>
       <div class="deal-body">
-        <strong>Compra por WhatsApp</strong>
-        <span>Tu pedido llega directo al vendedor para coordinar entrega</span>
+        <strong id="heroDealTitle">Compra por WhatsApp</strong>
+        <span id="heroDealSub">Tu pedido llega directo al vendedor para coordinar entrega</span>
       </div>
     </article>
   </div>
@@ -581,19 +284,17 @@ window.firebaseOnAuthStateChanged = onAuthStateChanged;
     <button class="tab-btn" data-tab="account">👤 Mi Cuenta</button>
   </div>
 
-  <!-- TAB: SHOP -->
+  <!-- TAB SHOP -->
   <div class="tab-panel active" id="tab-shop">
     <div class="shop-layout">
       <section>
         <div class="toolbar">
-          <h2>Productos</h2>
+          <h2>Productos <span class="sync-dot" title="Sincronizado en tiempo real"></span></h2>
           <div class="categories" id="categories"></div>
         </div>
         <div class="grid" id="productGrid"></div>
       </section>
-
-      <!-- Sidebar cart preview -->
-      <aside class="cart-panel" id="cartPreview">
+      <aside class="cart-panel">
         <div class="panel-head"><h2>Tu pedido</h2><span id="orderStatus">Sin productos</span></div>
         <div class="order-list" id="orderList"></div>
         <div class="summary">
@@ -601,19 +302,19 @@ window.firebaseOnAuthStateChanged = onAuthStateChanged;
           <div class="summary-row"><span>Entrega</span><strong>2 a 4 días</strong></div>
           <div class="summary-row total"><span>Total</span><strong id="total">$0</strong></div>
           <button class="btn-checkout" id="checkoutButton">Comprar por WhatsApp</button>
-          <div class="small">Al comprar se habilita una reseña por artículo en Mi Cuenta.</div>
+          <div class="small">Al comprar podrás solicitar tu reseña con $10 MXN de beneficio (sujeta a aprobación del vendedor).</div>
         </div>
       </aside>
     </div>
   </div>
 
-  <!-- TAB: FAVORITES -->
+  <!-- TAB FAVORITES -->
   <div class="tab-panel" id="tab-favorites">
     <div class="toolbar"><h2>Mis favoritos</h2></div>
     <div class="fav-grid" id="favGrid"></div>
   </div>
 
-  <!-- TAB: CART (full page) -->
+  <!-- TAB CART -->
   <div class="tab-panel" id="tab-cart">
     <div class="toolbar"><h2>Mi carrito</h2><span id="cartTabStatus">Sin productos</span></div>
     <div id="cartTabList" style="display:grid;gap:12px;margin-bottom:20px;"></div>
@@ -623,29 +324,27 @@ window.firebaseOnAuthStateChanged = onAuthStateChanged;
         <div class="summary-row"><span>Entrega</span><strong>2 a 4 días</strong></div>
         <div class="summary-row total"><span>Total</span><strong id="cartTabTotal">$0</strong></div>
         <button class="btn-checkout" id="checkoutButton2">Comprar por WhatsApp</button>
-        <div class="small">Al comprar se habilita una reseña por artículo en Mi Cuenta.</div>
+        <div class="small">Al comprar podrás solicitar tu reseña con $10 MXN de beneficio (sujeta a aprobación del vendedor).</div>
       </div>
     </div>
   </div>
 
-  <!-- TAB: ACCOUNT -->
+  <!-- TAB ACCOUNT -->
   <div class="tab-panel" id="tab-account">
     <div class="account-layout">
       <div class="panel-card">
         <div class="panel-head"><h2>Mi cuenta</h2><span id="accountStatus">Sin sesión</span></div>
-        <div class="panel-body" id="accountPanel">
-          <!-- rendered by JS -->
-        </div>
+        <div class="panel-body" id="accountPanel"></div>
       </div>
       <div class="panel-card">
-        <div class="panel-head"><h2>Mis compras</h2><span id="purchaseCount">0</span></div>
+        <div class="panel-head"><h2>Mis compras y reseñas</h2><span id="purchaseCount">0</span></div>
         <div class="panel-body purchase-list" id="purchaseList"></div>
       </div>
     </div>
   </div>
 </main>
 
-<!-- PRODUCT DETAIL MODAL -->
+<!-- PRODUCT MODAL -->
 <section class="modal" id="productModal">
   <div class="modal-card">
     <div class="modal-head">
@@ -654,24 +353,23 @@ window.firebaseOnAuthStateChanged = onAuthStateChanged;
     </div>
     <div class="detail-grid">
       <div>
-        <img class="gallery-main" id="detailMainImage" alt="" />
+        <img class="gallery-main" id="detailMainImage" alt=""/>
         <div class="thumbs" id="detailThumbs"></div>
       </div>
       <div class="detail-side">
         <div class="review-count" id="detailRating"></div>
-        <div class="price-row">
-          <span class="price" id="detailPrice"></span>
-          <span class="old-price" id="detailOldPrice"></span>
-        </div>
+        <div class="price-row"><span class="price" id="detailPrice"></span><span class="old-price" id="detailOldPrice"></span></div>
         <p class="meta" id="detailDescription"></p>
         <button class="btn-add" id="detailAdd">Agregar al carrito</button>
-        <form class="panel-body" id="detailReviewForm" style="border:1px solid var(--line);border-radius:var(--radius);padding:14px;">
-          <h3 style="font-size:1rem;">Dejar reseña</h3>
+        <!-- Review request form (shown after purchase) -->
+        <div id="detailReviewSection" style="display:none;border:1px solid var(--line);border-radius:var(--r);padding:14px;display:grid;gap:10px;">
+          <h3 style="font-size:1rem;">Solicitar reseña</h3>
           <div class="small" id="reviewHint"></div>
-          <div class="field"><label>Comentario</label><textarea id="detailReviewText" required></textarea></div>
-          <div class="field"><label>Foto del producto</label><input id="detailReviewPhoto" type="file" accept="image/*" required /></div>
-          <button class="btn-submit" type="submit">Publicar reseña</button>
-        </form>
+          <div class="field"><label>Tu comentario</label><textarea id="detailReviewText" required></textarea></div>
+          <div class="field"><label>Foto del producto</label><input id="detailReviewPhoto" type="file" accept="image/*" required/></div>
+          <button class="btn-submit" id="submitReviewRequest">Enviar solicitud de reseña</button>
+          <div class="small">Tu reseña aparecerá en la tienda una vez que el vendedor la apruebe. Recibirás $10 MXN de beneficio al ser aprobada.</div>
+        </div>
       </div>
       <div class="detail-reviews">
         <h3 style="font-size:1.1rem;margin-bottom:8px;">Comentarios de compradores</h3>
@@ -689,9 +387,9 @@ window.firebaseOnAuthStateChanged = onAuthStateChanged;
       <button class="btn-ghost" id="closeInfo">Cerrar</button>
     </div>
     <div class="panel-body" style="padding:20px;">
-      <p style="margin-bottom:10px;">Los productos se entregan en persona en un plazo de 2 a 4 días.</p>
-      <p style="margin-bottom:10px;">Por cada artículo comprado obtienes una reseña disponible. Publícala con foto desde Mi Cuenta para acumular beneficios.</p>
-      <p style="margin-bottom:16px;">Al presionar <strong>Comprar por WhatsApp</strong> se abrirá un mensaje listo para enviar al vendedor al número 5542910238.</p>
+      <p style="margin-bottom:10px;">Los productos se entregan en persona en 2 a 4 días.</p>
+      <p style="margin-bottom:10px;">Por cada artículo comprado puedes <strong>solicitar una reseña</strong>. El vendedor la revisará y si la aprueba, recibes $10 MXN de beneficio en la tienda.</p>
+      <p style="margin-bottom:16px;">Al presionar <strong>Comprar por WhatsApp</strong> se abrirá un mensaje al número 5542910238.</p>
       <button class="btn-submit" id="acceptInfo">Entendido</button>
     </div>
   </div>
@@ -701,33 +399,33 @@ window.firebaseOnAuthStateChanged = onAuthStateChanged;
 <section class="admin-overlay" id="adminOverlay">
   <div class="admin-shell">
     <div class="admin-title">
-      <div><h2>Panel del propietario</h2><span>Gestión de catálogo y categorías</span></div>
+      <div><h2>Panel del propietario</h2><span>Catálogo · Categorías · Reseñas</span></div>
       <button class="btn-ghost" id="closeAdmin">Cerrar</button>
     </div>
     <div class="admin-tabs">
       <button class="admin-tab active" data-atab="products">Productos</button>
       <button class="admin-tab" data-atab="categories">Categorías</button>
+      <button class="admin-tab" data-atab="banner">Banner Principal</button>
+      <button class="admin-tab" data-atab="reviews">Solicitudes de reseña <span id="pendingBadge" class="notif-dot" style="display:none">0</span></button>
     </div>
 
-    <!-- PRODUCTS SECTION -->
+    <!-- PRODUCTS -->
     <div class="admin-section active" id="asec-products">
       <div class="admin-grid">
         <form class="admin-form" id="productForm">
-          <input type="hidden" id="productId" />
-          <div class="field"><label>Nombre</label><input id="productName" required /></div>
+          <input type="hidden" id="productId"/>
+          <div class="field"><label>Nombre</label><input id="productName" required/></div>
           <div class="field">
             <label>Categoría</label>
-            <select id="productCategory" required>
-              <option value="">— seleccionar —</option>
-            </select>
+            <select id="productCategory" required><option value="">— seleccionar —</option></select>
           </div>
           <div class="admin-2col">
-            <div class="field"><label>Precio MXN</label><input id="productPrice" type="number" min="1" step="1" required /></div>
-            <div class="field"><label>Precio anterior</label><input id="productOldPrice" type="number" min="1" step="1" /></div>
+            <div class="field"><label>Precio MXN</label><input id="productPrice" type="number" min="1" step="1" required/></div>
+            <div class="field"><label>Precio anterior</label><input id="productOldPrice" type="number" min="1" step="1"/></div>
           </div>
-          <div class="field"><label>Etiqueta</label><input id="productBadge" placeholder="Oferta, Nuevo, Top ventas…" /></div>
+          <div class="field"><label>Etiqueta</label><input id="productBadge" placeholder="Oferta, Nuevo, Top ventas…"/></div>
           <div class="field"><label>Descripción</label><textarea id="productDescription" required></textarea></div>
-          <div class="field"><label>Imagen principal (URL)</label><input id="productImage" required placeholder="https://…" /></div>
+          <div class="field"><label>Imagen principal (URL)</label><input id="productImage" required placeholder="https://…"/></div>
           <div class="field"><label>Galería (una URL por línea)</label><textarea id="productGallery" placeholder="https://…"></textarea></div>
           <div class="admin-2col">
             <button class="btn-dark" type="submit">Guardar producto</button>
@@ -738,18 +436,41 @@ window.firebaseOnAuthStateChanged = onAuthStateChanged;
       </div>
     </div>
 
-    <!-- CATEGORIES SECTION -->
+    <!-- CATEGORIES -->
     <div class="admin-section" id="asec-categories">
       <div class="cat-layout">
         <form class="cat-form" id="categoryForm">
-          <div class="field"><label>Nombre de la categoría</label><input id="catName" required placeholder="Ej. Deportes" /></div>
+          <div class="field"><label>Nombre de la categoría</label><input id="catName" required placeholder="Ej. Deportes"/></div>
           <button class="btn-dark" type="submit">Agregar categoría</button>
         </form>
         <div>
-          <p class="small" style="margin-bottom:10px;">Categorías actuales (puedes eliminar las que no tengan productos asignados)</p>
+          <p class="small" style="margin-bottom:10px;">Puedes eliminar categorías que no tengan productos asignados.</p>
           <div class="cat-list" id="catList"></div>
         </div>
       </div>
+    </div>
+
+    <!-- BANNER -->
+    <div class="admin-section" id="asec-banner">
+      <div style="max-width:600px;display:grid;gap:14px;">
+        <p class="small">Edita el banner principal de la tienda. Los cambios se ven al instante para todos los visitantes.</p>
+        <form class="admin-form" id="bannerForm">
+          <div class="field"><label>Título del banner</label><input id="bannerTitle" required placeholder="Ej. ¡Nuevos productos disponibles!"/></div>
+          <div class="field"><label>Descripción / mensaje</label><textarea id="bannerDesc" required placeholder="Ej. Entrega personal en 2-4 días. Nuevos modelos disponibles."></textarea></div>
+          <div class="field"><label>Texto del botón principal</label><input id="bannerBtn1" placeholder="Ver productos"/></div>
+          <div class="field"><label>URL de imagen de fondo (opcional)</label><input id="bannerBg" placeholder="https://… (dejar vacío para mantener la actual)"/></div>
+          <div class="field"><label>Imagen de la tarjeta (derecha, URL)</label><input id="bannerCardImg" placeholder="https://…"/></div>
+          <div class="field"><label>Título de la tarjeta</label><input id="bannerCardTitle" placeholder="Ej. Compra por WhatsApp"/></div>
+          <div class="field"><label>Subtítulo de la tarjeta</label><input id="bannerCardSub" placeholder="Ej. Tu pedido llega directo al vendedor"/></div>
+          <button class="btn-dark" type="submit">💾 Guardar banner</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- REVIEW REQUESTS -->
+    <div class="admin-section" id="asec-reviews">
+      <p class="small" style="margin-bottom:14px;">Aquí aparecen las solicitudes de reseña enviadas por clientes después de comprar. Aprueba o rechaza cada una.</p>
+      <div class="req-list" id="reqList"><div class="empty">Cargando solicitudes…</div></div>
     </div>
   </div>
 </section>
@@ -757,736 +478,749 @@ window.firebaseOnAuthStateChanged = onAuthStateChanged;
 <button class="owner-hotspot" id="ownerHotspot"></button>
 <div class="toast" id="toast" role="status"></div>
 
-<script>
-/* ═══════════════════════════════════════════
-   DEFAULTS
-═══════════════════════════════════════════ */
-const defaultCategories = ["Tecnologia", "Hogar", "Moda"];
-const defaultProducts = [
-  { id: 1, name: "Laptop ultraligera 14 pulgadas", category: "Tecnologia", price: 14999, oldPrice: 17999, description: "Laptop premium con 16 GB RAM, SSD 512 GB, cuerpo metálico, pantalla nítida.", badge: "Oferta", image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=800&q=85", gallery: ["https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=900&q=85"] },
-  { id: 2, name: "Audífonos inalámbricos premium", category: "Tecnologia", price: 1299, oldPrice: 1899, description: "Audífonos con cancelación de ruido, estuche de carga y audio envolvente.", badge: "Top ventas", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=85", gallery: ["https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=900&q=85"] },
-  { id: 3, name: "Smartwatch deportivo resistente", category: "Tecnologia", price: 2199, oldPrice: 2699, description: "Reloj inteligente con GPS, monitoreo cardíaco y resistencia al agua.", badge: "Nuevo", image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=85", gallery: [] },
-  { id: 4, name: "Cafetera espresso compacta", category: "Hogar", price: 3499, oldPrice: 4199, description: "Cafetera de 15 bares, acabado elegante y preparación rápida.", badge: "Envio gratis", image: "https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?auto=format&fit=crop&w=800&q=85", gallery: [] },
-  { id: 5, name: "Silla ergonómica ejecutiva", category: "Hogar", price: 2899, oldPrice: 3599, description: "Silla de oficina con soporte lumbar y altura ajustable.", badge: "Premium", image: "https://images.unsplash.com/photo-1580480055273-228ff5388ef8?auto=format&fit=crop&w=800&q=85", gallery: [] },
-  { id: 6, name: "Mochila urbana impermeable", category: "Moda", price: 899, oldPrice: 1199, description: "Mochila resistente al agua con espacio para laptop y estilo minimalista.", badge: "Popular", image: "https://images.unsplash.com/photo-1622560480605-d83c853bc5c3?auto=format&fit=crop&w=800&q=85", gallery: [] }
-];
 
-/* ═══════════════════════════════════════════
-   STORAGE KEYS
-═══════════════════════════════════════════ */
-const SK = {
-  products:   "nova_products_v5",
-  categories: "nova_categories_v5",
-  users:      "nova_users_v5",
-  user:       "nova_user_v5",
-  cart:       "nova_cart_v5",
-  favorites:  "nova_favs_v5",
-  infoSeen:   "nova_info_v5"
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, setDoc, onSnapshot, collection, addDoc, updateDoc, deleteDoc, query, orderBy
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCQZc42suWda4uAa35C7Z8hgoStFmn9Rrs",
+  authDomain: "adrianshop-c50bb.firebaseapp.com",
+  projectId: "adrianshop-c50bb",
+  storageBucket: "adrianshop-c50bb.firebasestorage.app",
+  messagingSenderId: "323803301457",
+  appId: "1:323803301457:web:f64a7a1afad3c8b07f9a70"
 };
 
-/* ═══════════════════════════════════════════
-   FIREBASE HELPERS
-═══════════════════════════════════════════ */
-async function cloudSaveProducts() {
-  try {
-    await firebaseSetDoc(firebaseDoc(firebaseDB,"store","products"), { items: state.products });
-  } catch(e){ console.warn("cloud save products:", e); }
-}
-async function cloudSaveCategories() {
-  try {
-    await firebaseSetDoc(firebaseDoc(firebaseDB,"store","categories"), { items: state.categories });
-  } catch(e){ console.warn("cloud save categories:", e); }
-}
-async function cloudLoad() {
-  let ok = false;
-  try {
-    const [pSnap, cSnap] = await Promise.all([
-      firebaseGetDoc(firebaseDoc(firebaseDB,"store","products")),
-      firebaseGetDoc(firebaseDoc(firebaseDB,"store","categories"))
-    ]);
-    if (pSnap.exists()) {
-      const items = pSnap.data().items;
-      if (Array.isArray(items) && items.length) { state.products = items; ok = true; }
-    }
-    if (cSnap.exists()) {
-      const items = cSnap.data().items;
-      if (Array.isArray(items) && items.length) state.categories = items;
-    }
-  } catch(e){ console.warn("cloud load:", e); }
-  return ok;
-}
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
 
-/* ═══════════════════════════════════════════
-   UTILS
-═══════════════════════════════════════════ */
+
+/* ════════════════════════════════════════════
+   CONSTANTS & HELPERS
+════════════════════════════════════════════ */
+const SELLER = "525542910238";
 const byId = id => document.getElementById(id);
-const read = (k, fb) => { try { return JSON.parse(localStorage.getItem(k)) ?? fb; } catch{ return fb; } };
-const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
-const money = new Intl.NumberFormat("es-MX",{style:"currency",currency:"MXN",maximumFractionDigits:0});
-const sellerPhone = "525542910238";
+const read  = (k,fb) => { try{ return JSON.parse(localStorage.getItem(k))??fb }catch{ return fb } };
+const save  = (k,v)  => localStorage.setItem(k,JSON.stringify(v));
+const fmt   = new Intl.NumberFormat("es-MX",{style:"currency",currency:"MXN",maximumFractionDigits:0});
+
+const SK = {
+  categories: "nova_categories_v6",
+  user:       "nova_user_v6",
+  users:      "nova_users_v6",
+  cart:       "nova_cart_v6",
+  favorites:  "nova_favs_v6",
+  infoSeen:   "nova_info_v6"
+};
 
 function toast(msg) {
   const el = byId("toast");
   el.textContent = msg; el.classList.add("show");
   clearTimeout(toast._t);
-  toast._t = setTimeout(() => el.classList.remove("show"), 2000);
+  toast._t = setTimeout(()=>el.classList.remove("show"),2200);
 }
 
-/* ═══════════════════════════════════════════
-   STATE
-═══════════════════════════════════════════ */
+/* ════════════════════════════════════════════
+   STATE  (products & categories live in Firestore; rest local)
+════════════════════════════════════════════ */
 const state = {
-  products:   defaultProducts,
-  categories: read(SK.categories, defaultCategories),
-  users:      read(SK.users, {}),
+  products:    [],
+  categories:  read(SK.categories, ["Tecnologia","Hogar","Moda"]),
+  users:       read(SK.users, {}),
   currentEmail: read(SK.user, ""),
-  cart:       read(SK.cart, []),      // persisted
-  favorites:  read(SK.favorites, []), // persisted (array of product ids)
-  category:   "Todos",
-  query:      "",
+  cart:        read(SK.cart, []),
+  favorites:   read(SK.favorites, []),
+  category:    "Todos",
+  query:       "",
   detailProductId: null,
+  reviewRequests: [],
+  banner: {},
 };
 
-function currentUser() {
-  if (!state.currentEmail) return null;
-  return state.users[state.currentEmail] || null;
-}
-function saveUsers() { save(SK.users, state.users); }
-function saveCart()  { save(SK.cart, state.cart); }
-function saveFavs()  { save(SK.favorites, state.favorites); }
+const currentUser  = () => state.currentEmail ? (state.users[state.currentEmail]||null) : null;
+const saveUsers    = () => save(SK.users, state.users);
+const saveCart     = () => save(SK.cart, state.cart);
+const saveFavs     = () => save(SK.favorites, state.favorites);
 
-/* purchase count per product (for hot items) */
-function purchaseCount(productId) {
-  return Object.values(state.users).reduce((n, u) =>
-    n + u.purchases.filter(p => p.productId === productId).length, 0);
-}
-function hotProducts(n = 3) {
-  return state.products
-    .map(p => ({ id: p.id, count: purchaseCount(p.id) }))
-    .filter(x => x.count > 0)
-    .sort((a,b) => b.count - a.count)
-    .slice(0, n)
-    .map(x => x.id);
-}
-
-/* ═══════════════════════════════════════════
-   TABS
-═══════════════════════════════════════════ */
-function switchTab(name) {
-  document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
-  document.querySelectorAll(".tab-panel").forEach(p => p.classList.toggle("active", p.id === "tab-"+name));
-}
-document.querySelectorAll(".tab-btn").forEach(b => b.addEventListener("click", () => switchTab(b.dataset.tab)));
-byId("tabShop").addEventListener("click", () => switchTab("shop"));
-byId("tabFavBtn").addEventListener("click", () => switchTab("favorites"));
-byId("tabCartBtn").addEventListener("click", () => switchTab("cart"));
-byId("tabAccountBtn").addEventListener("click", () => switchTab("account"));
-byId("shopNow").addEventListener("click", () => {
-  document.querySelector("main").scrollIntoView({behavior:"smooth"});
-  switchTab("shop");
+/* ════════════════════════════════════════════
+   FIRESTORE — REAL-TIME LISTENERS
+════════════════════════════════════════════ */
+// Products: real-time sync for ALL clients
+onSnapshot(doc(db,"store","products"), snap => {
+  if (snap.exists()) {
+    const items = snap.data().items;
+    if (Array.isArray(items)) {
+      state.products = items;
+      renderCategories();
+      renderProducts();
+      renderAdminProducts();
+    }
+  }
 });
 
-/* ═══════════════════════════════════════════
-   ADMIN TABS
-═══════════════════════════════════════════ */
-document.querySelectorAll(".admin-tab").forEach(b => {
-  b.addEventListener("click", () => {
-    document.querySelectorAll(".admin-tab").forEach(x => x.classList.remove("active"));
-    document.querySelectorAll(".admin-section").forEach(x => x.classList.remove("active"));
+// Categories: real-time
+onSnapshot(doc(db,"store","categories"), snap => {
+  if (snap.exists()) {
+    const items = snap.data().items;
+    if (Array.isArray(items)) {
+      state.categories = items;
+      save(SK.categories, items);
+      renderCategories();
+      renderAdminCategories();
+      repopulateCategorySelect();
+    }
+  }
+});
+
+// Review Requests: real-time
+onSnapshot(
+  query(collection(db,"reviewRequests"), orderBy("createdAt","desc")),
+  snap => {
+    state.reviewRequests = snap.docs.map(d => ({id:d.id,...d.data()}));
+    renderAdminReviews();
+    renderPurchases();           // update client view
+    updatePendingBadge();
+  }
+);
+
+/* ════════════════════════════════════════════
+   CLOUD SAVE HELPERS
+════════════════════════════════════════════ */
+async function cloudSaveProducts() {
+  try {
+    await setDoc(doc(db,"store","products"),{items:state.products});
+    // Render immediately without waiting for the snapshot (snapshot may lag)
+    renderCategories();
+    renderProducts();
+    renderAdminProducts();
+  } catch(e){
+    console.error("Error guardando productos:", e);
+    toast("⚠️ Error al guardar en la nube: " + e.message);
+  }
+}
+async function cloudSaveCategories() {
+  try { await setDoc(doc(db,"store","categories"),{items:state.categories}); }
+  catch(e){ console.warn(e); }
+}
+async function cloudSaveBanner() {
+  try { await setDoc(doc(db,"store","banner"), state.banner); }
+  catch(e){ console.warn(e); }
+}
+
+function applyBanner(b) {
+  if (!b) return;
+  if (b.title)      byId("heroTitle").textContent = b.title;
+  if (b.desc)       byId("heroDesc").textContent  = b.desc;
+  if (b.btn1)       byId("heroBtn1").textContent  = b.btn1;
+  if (b.cardImg)    byId("heroDealImg").src        = b.cardImg;
+  if (b.cardTitle)  byId("heroDealTitle").textContent = b.cardTitle;
+  if (b.cardSub)    byId("heroDealSub").textContent   = b.cardSub;
+  if (b.bg) {
+    document.querySelector(".hero").style.backgroundImage =
+      `linear-gradient(130deg,rgba(7,26,51,.97),rgba(15,46,83,.91)),url("${b.bg}")`;
+  }
+}
+
+// Banner real-time listener
+onSnapshot(doc(db,"store","banner"), snap => {
+  if (snap.exists()) {
+    state.banner = snap.data();
+    applyBanner(state.banner);
+    fillBannerForm(state.banner);
+  }
+});
+
+/* INIT: ensure default data exists */
+(async()=>{
+  try {
+    const [pSnap,cSnap] = await Promise.all([
+      getDoc(doc(db,"store","products")),
+      getDoc(doc(db,"store","categories"))
+    ]);
+    if (!pSnap.exists()||!pSnap.data().items?.length) {
+      state.products = defaultProducts();
+      await cloudSaveProducts();
+    }
+    if (!cSnap.exists()||!cSnap.data().items?.length) {
+      await cloudSaveCategories();
+    }
+  } catch(e){ console.warn(e); }
+  renderAll();
+  if (!read(SK.infoSeen,false)) byId("infoModal").classList.add("open");
+})();
+
+function defaultProducts() {
+  return [
+    {id:1,name:"Laptop ultraligera 14 pulgadas",category:"Tecnologia",price:14999,oldPrice:17999,description:"Laptop premium con 16 GB RAM, SSD 512 GB, cuerpo metálico y pantalla nítida.",badge:"Oferta",image:"https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=800&q=85",gallery:["https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=900&q=85"]},
+    {id:2,name:"Audífonos inalámbricos premium",category:"Tecnologia",price:1299,oldPrice:1899,description:"Audífonos con cancelación de ruido, estuche de carga y audio envolvente.",badge:"Top ventas",image:"https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=85",gallery:["https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=900&q=85"]},
+    {id:3,name:"Smartwatch deportivo resistente",category:"Tecnologia",price:2199,oldPrice:2699,description:"Reloj inteligente con GPS, monitoreo cardíaco y resistencia al agua.",badge:"Nuevo",image:"https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=85",gallery:[]},
+    {id:4,name:"Cafetera espresso compacta",category:"Hogar",price:3499,oldPrice:4199,description:"Cafetera de 15 bares, acabado elegante y preparación rápida.",badge:"Envio gratis",image:"https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?auto=format&fit=crop&w=800&q=85",gallery:[]},
+    {id:5,name:"Silla ergonómica ejecutiva",category:"Hogar",price:2899,oldPrice:3599,description:"Silla de oficina con soporte lumbar y altura ajustable.",badge:"Premium",image:"https://images.unsplash.com/photo-1580480055273-228ff5388ef8?auto=format&fit=crop&w=800&q=85",gallery:[]},
+    {id:6,name:"Mochila urbana impermeable",category:"Moda",price:899,oldPrice:1199,description:"Mochila resistente al agua, espacio para laptop y estilo minimalista.",badge:"Popular",image:"https://images.unsplash.com/photo-1622560480605-d83c853bc5c3?auto=format&fit=crop&w=800&q=85",gallery:[]}
+  ];
+}
+
+/* ════════════════════════════════════════════
+   TABS
+════════════════════════════════════════════ */
+function switchTab(name) {
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.toggle("active",b.dataset.tab===name));
+  document.querySelectorAll(".tab-panel").forEach(p=>p.classList.toggle("active",p.id==="tab-"+name));
+}
+document.querySelectorAll(".tab-btn").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.tab)));
+byId("tabShopBtn").addEventListener("click",()=>switchTab("shop"));
+byId("tabFavBtn").addEventListener("click",()=>switchTab("favorites"));
+byId("tabCartBtn").addEventListener("click",()=>switchTab("cart"));
+byId("tabAccountBtn").addEventListener("click",()=>switchTab("account"));
+byId("shopNow").addEventListener("click",()=>{document.querySelector("main").scrollIntoView({behavior:"smooth"});switchTab("shop");});
+
+document.querySelectorAll(".admin-tab").forEach(b=>{
+  b.addEventListener("click",()=>{
+    document.querySelectorAll(".admin-tab").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".admin-section").forEach(x=>x.classList.remove("active"));
     b.classList.add("active");
     byId("asec-"+b.dataset.atab).classList.add("active");
   });
 });
 
-/* ═══════════════════════════════════════════
-   RENDER CATEGORIES
-═══════════════════════════════════════════ */
+/* ════════════════════════════════════════════
+   RENDER HELPERS
+════════════════════════════════════════════ */
+function approvedReviewsFor(productId) {
+  return state.reviewRequests.filter(r=>r.productId===productId && r.status==="approved");
+}
+function purchaseCount(productId) {
+  return Object.values(state.users).reduce((n,u)=>n+u.purchases.filter(p=>p.productId===productId).length,0);
+}
+function hotIds(n=3) {
+  return state.products
+    .map(p=>({id:p.id,c:purchaseCount(p.id)}))
+    .filter(x=>x.c>0)
+    .sort((a,b)=>b.c-a.c).slice(0,n).map(x=>x.id);
+}
+
 function renderCategories() {
-  const cats = ["Todos", ...state.categories];
-  byId("categories").innerHTML = cats.map(c => `
+  const cats=["Todos",...state.categories];
+  byId("categories").innerHTML=cats.map(c=>`
     <button class="chip ${state.category===c?"active":""}" data-category="${c}">${c}</button>
   `).join("");
-
-  // also populate admin select
-  const sel = byId("productCategory");
-  const cur = sel.value;
-  sel.innerHTML = `<option value="">— seleccionar —</option>` +
-    state.categories.map(c => `<option value="${c}" ${cur===c?"selected":""}>${c}</option>`).join("");
 }
 
-function renderAdminCategories() {
-  byId("catList").innerHTML = state.categories.map(c => `
-    <div class="cat-item">
-      <span>${c}</span>
-      <button class="btn-danger" data-delcat="${c}" style="padding:6px 12px;font-size:0.82rem;">Eliminar</button>
-    </div>
-  `).join("") || `<div class="empty">No hay categorías aún.</div>`;
+function repopulateCategorySelect() {
+  const sel=byId("productCategory");
+  if(!sel) return;
+  const cur=sel.value;
+  sel.innerHTML=`<option value="">— seleccionar —</option>`+
+    state.categories.map(c=>`<option value="${c}" ${cur===c?"selected":""}>${c}</option>`).join("");
 }
 
-/* ═══════════════════════════════════════════
-   RENDER PRODUCTS
-═══════════════════════════════════════════ */
 function renderProducts() {
-  const hot = hotProducts();
-  const items = state.products.filter(p => {
-    const mc = state.category==="Todos" || p.category===state.category;
-    const t = `${p.name} ${p.category} ${p.description}`.toLowerCase();
-    return mc && t.includes(state.query.toLowerCase());
+  const hot=hotIds();
+  let items=state.products.filter(p=>{
+    const mc=state.category==="Todos"||p.category===state.category;
+    const t=`${p.name} ${p.category} ${p.description}`.toLowerCase();
+    return mc&&t.includes(state.query.toLowerCase());
   });
-  // sort: hot items first
-  items.sort((a,b) => {
-    const ha = hot.includes(a.id), hb = hot.includes(b.id);
-    if (ha && !hb) return -1; if (!ha && hb) return 1; return 0;
-  });
-
-  byId("productGrid").innerHTML = items.length ? items.map(p => {
-    const isHot = hot.includes(p.id);
-    const isFav = state.favorites.includes(p.id);
+  items.sort((a,b)=>{const ha=hot.includes(a.id),hb=hot.includes(b.id);return ha&&!hb?-1:!ha&&hb?1:0;});
+  byId("productGrid").innerHTML=items.length?items.map(p=>{
+    const isHot=hot.includes(p.id);
+    const isFav=state.favorites.includes(p.id);
+    const revCount=approvedReviewsFor(p.id).length;
     return `
       <article class="product-card ${isHot?"hot":""}" data-open-product="${p.id}">
-        ${isHot ? `<div class="hot-ribbon">🔥 Más vendido</div>` : ""}
+        ${isHot?`<div class="hot-ribbon">🔥 Más vendido</div>`:""}
         <div class="product-image">
-          <img src="${p.image}" alt="${p.name}" loading="lazy" />
+          <img src="${p.image}" alt="${p.name}" loading="lazy"/>
           <span class="badge">${p.badge||"Nuevo"}</span>
-          <button class="fav-btn ${isFav?"active":""}" data-fav="${p.id}" title="${isFav?"Quitar de favoritos":"Agregar a favoritos"}">
-            ${isFav?"❤️":"🤍"}
-          </button>
+          <button class="fav-btn ${isFav?"active":""}" data-fav="${p.id}">${isFav?"❤️":"🤍"}</button>
         </div>
         <div class="product-info">
-          <div class="review-count">${productReviews(p.id).length} reseñas verificadas${isHot?` · <strong style="color:var(--gold)">🔥 Popular</strong>`:""}</div>
+          <div class="review-count">${revCount} reseña${revCount!==1?"s":""} verificada${revCount!==1?"s":""}${isHot?` · <strong style="color:var(--gold)">🔥 Popular</strong>`:""}</div>
           <h3 class="product-title">${p.name}</h3>
           <div class="meta">${p.description}</div>
-          <div class="price-row">
-            <span class="price">${money.format(p.price)}</span>
-            ${p.oldPrice?`<span class="old-price">${money.format(p.oldPrice)}</span>`:""}
-          </div>
+          <div class="price-row"><span class="price">${fmt.format(p.price)}</span>${p.oldPrice?`<span class="old-price">${fmt.format(p.oldPrice)}</span>`:""}</div>
           <div class="shipping">Entrega personal 2-4 días</div>
           <button class="btn-add" data-add="${p.id}">Agregar al carrito</button>
         </div>
-      </article>
-    `;
-  }).join("") : `<p class="empty" style="grid-column:1/-1">No encontramos productos con esa búsqueda.</p>`;
+      </article>`;
+  }).join(""):`<p class="empty" style="grid-column:1/-1">No encontramos productos con esa búsqueda.</p>`;
 }
 
-/* ═══════════════════════════════════════════
-   RENDER FAVORITES
-═══════════════════════════════════════════ */
 function renderFavorites() {
-  byId("favCount").textContent = state.favorites.length;
-  const favs = state.products.filter(p => state.favorites.includes(p.id));
-  if (!favs.length) {
-    byId("favGrid").innerHTML = `
-      <div class="fav-empty">
-        <span>🤍</span>
-        Aún no tienes favoritos. Toca el corazón en cualquier producto para guardarlo aquí.
-      </div>`;
-    return;
-  }
-  byId("favGrid").innerHTML = favs.map(p => `
+  byId("favCount").textContent=state.favorites.length;
+  const favs=state.products.filter(p=>state.favorites.includes(p.id));
+  byId("favGrid").innerHTML=favs.length?favs.map(p=>`
     <article class="product-card" data-open-product="${p.id}">
       <div class="product-image">
-        <img src="${p.image}" alt="${p.name}" loading="lazy" />
+        <img src="${p.image}" alt="${p.name}" loading="lazy"/>
         <span class="badge">${p.badge||"Nuevo"}</span>
         <button class="fav-btn active" data-fav="${p.id}">❤️</button>
       </div>
       <div class="product-info">
         <h3 class="product-title">${p.name}</h3>
-        <div class="price-row">
-          <span class="price">${money.format(p.price)}</span>
-          ${p.oldPrice?`<span class="old-price">${money.format(p.oldPrice)}</span>`:""}
-        </div>
+        <div class="price-row"><span class="price">${fmt.format(p.price)}</span>${p.oldPrice?`<span class="old-price">${fmt.format(p.oldPrice)}</span>`:""}</div>
         <button class="btn-add" data-add="${p.id}">Agregar al carrito</button>
       </div>
-    </article>
-  `).join("");
+    </article>`).join(""):`
+    <div class="fav-empty"><span>🤍</span>Aún no tienes favoritos. Toca el corazón en cualquier producto.</div>`;
 }
 
-/* ═══════════════════════════════════════════
-   RENDER CART (sidebar + full tab)
-═══════════════════════════════════════════ */
 function renderCart() {
-  const subtotal = state.cart.reduce((s,i) => s + Number(i.price), 0);
-  byId("cartCount").textContent = state.cart.length;
-  byId("orderStatus").textContent = state.cart.length ? `${state.cart.length} producto${state.cart.length>1?"s":""}` : "Sin productos";
-  byId("cartTabStatus").textContent = byId("orderStatus").textContent;
-
-  const cartHTML = state.cart.length
-    ? state.cart.map(p => `
-        <div class="order-item">
-          <img src="${p.image}" alt="${p.name}" />
-          <div>
-            <div class="order-name">${p.name}</div>
-            <div class="order-price">${money.format(p.price)}</div>
-          </div>
-          <button class="btn-remove" data-remove="${p.cartId}">×</button>
-        </div>`)
-      .join("")
-    : `<div class="empty">Tu carrito está vacío.</div>`;
-
-  byId("orderList").innerHTML = cartHTML;
-
-  // Full cart tab
-  byId("cartTabList").innerHTML = state.cart.length
-    ? state.cart.map(p => `
-        <div class="purchase-item">
-          <img src="${p.image}" alt="${p.name}" />
-          <div>
-            <strong>${p.name}</strong>
-            <div class="small">${money.format(p.price)}</div>
-          </div>
-          <div class="btn-actions">
-            <button class="btn-danger" data-remove="${p.cartId}">Quitar</button>
-          </div>
-        </div>`).join("")
-    : `<div class="empty">Tu carrito está vacío. Agrega productos desde la tienda.</div>`;
-
-  ["subtotal","cartTabSubtotal"].forEach(id => byId(id).textContent = money.format(subtotal));
-  ["total","cartTabTotal"].forEach(id => byId(id).textContent = money.format(subtotal));
+  const sub=state.cart.reduce((s,i)=>s+Number(i.price),0);
+  byId("cartCount").textContent=state.cart.length;
+  const status=state.cart.length?`${state.cart.length} producto${state.cart.length>1?"s":""}` : "Sin productos";
+  byId("orderStatus").textContent=status;
+  byId("cartTabStatus").textContent=status;
+  const rows=state.cart.length?state.cart.map(p=>`
+    <div class="order-item">
+      <img src="${p.image}" alt="${p.name}"/>
+      <div><div class="order-name">${p.name}</div><div class="order-price">${fmt.format(p.price)}</div></div>
+      <button class="btn-remove" data-remove="${p.cartId}">×</button>
+    </div>`).join(""):`<div class="empty">Tu carrito está vacío.</div>`;
+  byId("orderList").innerHTML=rows;
+  byId("cartTabList").innerHTML=state.cart.length?state.cart.map(p=>`
+    <div class="purchase-item">
+      <img src="${p.image}" alt="${p.name}"/>
+      <div><strong>${p.name}</strong><div class="small">${fmt.format(p.price)}</div></div>
+      <div class="btn-actions"><button class="btn-danger" data-remove="${p.cartId}">Quitar</button></div>
+    </div>`).join(""):`<div class="empty">Tu carrito está vacío.</div>`;
+  ["subtotal","cartTabSubtotal"].forEach(id=>byId(id).textContent=fmt.format(sub));
+  ["total","cartTabTotal"].forEach(id=>byId(id).textContent=fmt.format(sub));
 }
 
-/* ═══════════════════════════════════════════
-   RENDER ACCOUNT
-═══════════════════════════════════════════ */
 function renderAccount() {
-  const user = currentUser();
-  byId("accountStatus").textContent = user ? user.publicName : "Sin sesión";
-
-  // Account panel
+  const user=currentUser();
+  byId("accountStatus").textContent=user?user.publicName:"Sin sesión";
   if (user) {
-    byId("accountPanel").innerHTML = `
+    byId("accountPanel").innerHTML=`
       <div style="display:grid;gap:6px;">
         <div class="small">Sesión iniciada como</div>
         <strong style="font-size:1rem;">${user.publicName}</strong>
         <div class="small">${user.email}</div>
       </div>
-      <button class="btn-ghost" id="logoutBtn">Cerrar sesión</button>
-      <button class="btn-ghost" id="openGoogleBtn">Cambiar cuenta con Google</button>
-    `;
-    byId("logoutBtn").addEventListener("click", () => {
-      state.currentEmail = "";
-      save(SK.user, "");
-      renderAccount();
-      toast("Sesión cerrada");
+      <button class="btn-ghost" id="logoutBtn">Cerrar sesión</button>`;
+    byId("logoutBtn").addEventListener("click",()=>{
+      state.currentEmail=""; save(SK.user,""); renderAccount(); toast("Sesión cerrada");
     });
-    byId("openGoogleBtn").addEventListener("click", doGoogleLogin);
   } else {
-    byId("accountPanel").innerHTML = `
-      <div class="disabled-note">
-        ✉️ Registro por correo electrónico <strong>próximamente disponible</strong>
-      </div>
+    byId("accountPanel").innerHTML=`
+      <div class="disabled-note">✉️ Registro por correo <strong>próximamente</strong></div>
       <button class="btn-ghost" id="openGoogleBtn">Entrar con Google</button>
-      <div class="small" style="text-align:center;color:var(--muted);">
-        Inicia sesión para ver tu historial de compras y dejar reseñas.
-      </div>
-    `;
-    byId("openGoogleBtn").addEventListener("click", doGoogleLogin);
+      <div class="small" style="text-align:center;">Inicia sesión para ver tus compras y solicitar reseñas.</div>`;
+    byId("openGoogleBtn").addEventListener("click",doGoogle);
   }
-
   renderPurchases();
 }
 
-function doGoogleLogin() {
-  if (!window.firebaseAuth) { toast("Firebase no disponible"); return; }
-  window.firebaseSignIn(window.firebaseAuth, window.firebaseProvider)
-    .then(r => {
-      const email = r.user.email.toLowerCase();
-      const publicName = r.user.displayName || "Usuario Premium";
-      state.users[email] = state.users[email] || { email, publicName, purchases: [], reviews: [] };
-      state.users[email].publicName = publicName;
-      state.currentEmail = email;
-      save(SK.user, email);
-      saveUsers();
-      renderAccount();
-      toast(`¡Bienvenido, ${publicName}!`);
-    })
-    .catch(e => { console.error(e); toast("No se pudo iniciar sesión con Google"); });
-}
-
-/* ═══════════════════════════════════════════
-   RENDER PURCHASES
-═══════════════════════════════════════════ */
 function renderPurchases() {
-  const user = currentUser();
-  if (!user) {
-    byId("purchaseCount").textContent = "0";
-    byId("purchaseList").innerHTML = `<div class="empty">Inicia sesión para ver tu historial de compras.</div>`;
-    return;
-  }
-  byId("purchaseCount").textContent = user.purchases.length;
-  byId("purchaseList").innerHTML = user.purchases.length
-    ? user.purchases.map(p => {
-        const reviewed = user.reviews.some(r => r.purchaseId === p.purchaseId);
-        return `
-          <article class="purchase-item">
-            <img src="${p.image}" alt="${p.name}" />
-            <div>
-              <strong>${p.name}</strong>
-              <div class="small">${money.format(p.price)} · ${new Date(p.date).toLocaleDateString("es-MX")}</div>
-              <div style="color:${reviewed?"var(--muted)":"var(--success)"};font-weight:700;font-size:0.82rem;">
-                ${reviewed ? "Reseña publicada" : "Reseña disponible"}
-              </div>
-            </div>
-            <div class="btn-actions">
-              <button class="btn-ghost" data-open-purchase="${p.purchaseId}" style="font-size:0.82rem;padding:6px 10px;">Ver producto</button>
-            </div>
-          </article>`;
-      }).join("")
-    : `<div class="empty">Aún no tienes compras registradas.</div>`;
+  const user=currentUser();
+  if(!user){byId("purchaseCount").textContent="0";byId("purchaseList").innerHTML=`<div class="empty">Inicia sesión para ver tus compras.</div>`;return;}
+  byId("purchaseCount").textContent=user.purchases.length;
+
+  if(!user.purchases.length){byId("purchaseList").innerHTML=`<div class="empty">Aún no tienes compras registradas.</div>`;return;}
+
+  byId("purchaseList").innerHTML=user.purchases.map(pu=>{
+    // find review request for this purchase
+    const req=state.reviewRequests.find(r=>r.purchaseId===pu.purchaseId);
+    let reviewStatus="";
+    if(!req){
+      reviewStatus=`<button class="btn-ghost" style="font-size:.8rem;padding:5px 10px;" data-request-review="${pu.purchaseId}">Solicitar reseña (+$10 MXN)</button>`;
+    } else if(req.status==="pending"){
+      reviewStatus=`<span class="status-badge status-pending">⏳ Reseña en revisión</span>`;
+    } else if(req.status==="approved"){
+      reviewStatus=`<span class="status-badge status-approved">✅ Reseña aprobada</span>`;
+    } else {
+      reviewStatus=`<span class="status-badge status-rejected">❌ No aprobada</span>`;
+    }
+    return `
+      <article class="purchase-item">
+        <img src="${pu.image}" alt="${pu.name}"/>
+        <div>
+          <strong>${pu.name}</strong>
+          <div class="small">${fmt.format(pu.price)} · ${new Date(pu.date).toLocaleDateString("es-MX")}</div>
+          <div style="margin-top:4px;">${reviewStatus}</div>
+        </div>
+        <div class="btn-actions">
+          <button class="btn-ghost" data-open-purchase="${pu.purchaseId}" style="font-size:.82rem;padding:6px 10px;">Ver</button>
+        </div>
+      </article>`;
+  }).join("");
 }
 
-/* ═══════════════════════════════════════════
-   RENDER ADMIN PRODUCTS
-═══════════════════════════════════════════ */
 function renderAdminProducts() {
-  byId("adminList").innerHTML = state.products.map(p => `
+  byId("adminList").innerHTML=state.products.map(p=>`
     <article class="admin-product">
-      <img src="${p.image}" alt="${p.name}" />
-      <div>
-        <strong>${p.name}</strong>
-        <div class="small">${p.category} · ${money.format(p.price)}</div>
-        <div class="small" style="margin-top:2px;">${p.description.substring(0,60)}…</div>
-      </div>
+      <img src="${p.image}" alt="${p.name}"/>
+      <div><strong>${p.name}</strong><div class="small">${p.category} · ${fmt.format(p.price)}</div><div class="small">${p.description.substring(0,55)}…</div></div>
       <div class="btn-actions" style="flex-direction:column;">
         <button class="btn-ghost" data-edit="${p.id}">Editar</button>
         <button class="btn-danger" data-delete="${p.id}">Quitar</button>
       </div>
-    </article>
-  `).join("");
+    </article>`).join("");
 }
 
-/* ═══════════════════════════════════════════
-   RENDER ALL
-═══════════════════════════════════════════ */
+function renderAdminCategories() {
+  byId("catList").innerHTML=state.categories.map(c=>`
+    <div class="cat-item">
+      <span>${c}</span>
+      <button class="btn-danger" data-delcat="${c}" style="padding:6px 12px;font-size:.82rem;">Eliminar</button>
+    </div>`).join("")||`<div class="empty">No hay categorías aún.</div>`;
+}
+
+function renderAdminReviews() {
+  const list=byId("reqList");
+  if(!state.reviewRequests.length){list.innerHTML=`<div class="empty">No hay solicitudes de reseña todavía.</div>`;return;}
+  list.innerHTML=state.reviewRequests.map(r=>{
+    const statusLabel=r.status==="pending"?"⏳ Pendiente":r.status==="approved"?"✅ Aprobada":"❌ Rechazada";
+    const statusClass=`status-${r.status}`;
+    return `
+      <div class="req-card ${r.status}" data-reqid="${r.id}">
+        <img src="${r.photo}" alt="Foto de reseña"/>
+        <div class="req-info">
+          <strong>${r.productName}</strong>
+          <div class="small">Cliente: ${r.userName} · ${new Date(r.createdAt).toLocaleString("es-MX")}</div>
+          <div class="small" style="margin:4px 0;font-style:italic;">"${r.text}"</div>
+          <span class="status-badge ${statusClass}">${statusLabel}</span>
+        </div>
+        <div class="req-actions">
+          ${r.status==="pending"?`
+            <button class="btn-success" data-approve="${r.id}">✓ Aprobar</button>
+            <button class="btn-danger" data-reject="${r.id}">✗ Rechazar</button>
+          `:`<button class="btn-ghost" data-delete-req="${r.id}">Eliminar</button>`}
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function updatePendingBadge() {
+  const n=state.reviewRequests.filter(r=>r.status==="pending").length;
+  const el=byId("pendingBadge");
+  el.textContent=n;
+  el.style.display=n>0?"":"none";
+}
+
+function renderAdminAll() {
+  renderAdminProducts(); renderAdminCategories(); renderAdminReviews(); repopulateCategorySelect();
+}
+
 function renderAll() {
-  renderCategories();
-  renderProducts();
-  renderCart();
-  renderAccount();
-  renderFavorites();
-  renderAdminProducts();
-  renderAdminCategories();
+  renderCategories(); renderProducts(); renderCart(); renderAccount(); renderFavorites(); renderAdminAll();
 }
 
-/* ═══════════════════════════════════════════
+/* ════════════════════════════════════════════
    PRODUCT DETAIL
-═══════════════════════════════════════════ */
-function productReviews(productId) {
-  return Object.values(state.users)
-    .flatMap(u => u.reviews.map(r => ({...r, publicName: u.publicName})))
-    .filter(r => r.productId === productId);
-}
+════════════════════════════════════════════ */
+function openProduct(productId, purchaseId=null) {
+  const p=state.products.find(x=>x.id===Number(productId));
+  if(!p) return;
+  state.detailProductId=p.id;
+  byId("detailTitle").textContent=p.name;
+  byId("detailSubtitle").textContent=`${p.category} · entrega 2-4 días`;
+  const approvedRevs=approvedReviewsFor(p.id);
+  byId("detailRating").textContent=`${approvedRevs.length} comentario${approvedRevs.length!==1?"s":""}`;
+  byId("detailPrice").textContent=fmt.format(p.price);
+  byId("detailOldPrice").textContent=p.oldPrice?fmt.format(p.oldPrice):"";
+  byId("detailDescription").textContent=p.description;
 
-function openProduct(productId, purchaseId = null) {
-  const p = state.products.find(x => x.id === Number(productId));
-  if (!p) return;
-  state.detailProductId = p.id;
-  byId("detailTitle").textContent = p.name;
-  byId("detailSubtitle").textContent = `${p.category} · entrega 2-4 días`;
-  byId("detailRating").textContent = `${productReviews(p.id).length} comentarios`;
-  byId("detailPrice").textContent = money.format(p.price);
-  byId("detailOldPrice").textContent = p.oldPrice ? money.format(p.oldPrice) : "";
-  byId("detailDescription").textContent = p.description;
+  const imgs=[p.image,...(p.gallery||[]),...approvedRevs.map(r=>r.photo)];
+  byId("detailMainImage").src=imgs[0];
+  byId("detailThumbs").innerHTML=imgs.map((src,i)=>`<img src="${src}" class="${i===0?"active":""}" data-thumb="${src}"/>`).join("");
 
-  const imgs = [p.image, ...(p.gallery||[]), ...productReviews(p.id).map(r=>r.photo)];
-  byId("detailMainImage").src = imgs[0];
-  byId("detailThumbs").innerHTML = imgs.map((src,i) =>
-    `<img src="${src}" class="${i===0?"active":""}" data-thumb="${src}" />`).join("");
+  // Approved reviews display
+  byId("detailReviews").innerHTML=approvedRevs.length?approvedRevs.map(r=>`
+    <div class="review-item" style="margin-bottom:8px;">
+      <img class="review-photo" src="${r.photo}" alt=""/>
+      <div><strong>${r.userName}</strong><div class="small">${r.text}</div><div class="verified">✓ Reseña aprobada por el vendedor</div></div>
+    </div>`).join(""):`<div class="empty">Aún no hay comentarios aprobados para este producto.</div>`;
 
-  // reviews
-  const reviews = productReviews(p.id);
-  byId("detailReviews").innerHTML = reviews.length
-    ? reviews.map(r => `
-        <div class="review-item" style="margin-bottom:8px;">
-          <img class="review-photo" src="${r.photo}" alt="" />
-          <div><strong>${r.publicName}</strong><div class="small">${r.text}</div><div class="verified">✓ Compra verificada</div></div>
-        </div>`).join("")
-    : `<div class="empty">Aún no hay comentarios para este producto.</div>`;
-
-  // review form
-  const user = currentUser();
-  const reviewed = new Set((user?.reviews||[]).map(r=>r.purchaseId));
-  const available = user?.purchases.find(pu =>
-    pu.productId === p.id && !reviewed.has(pu.purchaseId) &&
-    (purchaseId ? pu.purchaseId===purchaseId : true)
-  ) || null;
-  const form = byId("detailReviewForm");
-  form.dataset.purchaseId = available?.purchaseId || "";
-  form.style.display = (user && available) ? "grid" : "none";
-  byId("reviewHint").textContent = available
-    ? `Reseña disponible para: ${available.name}`
-    : "";
+  // Review request form: show only if user has this purchase and hasn't requested yet
+  const user=currentUser();
+  const sec=byId("detailReviewSection");
+  sec.style.display="none";
+  if (user) {
+    const pu=purchaseId
+      ? user.purchases.find(x=>x.purchaseId===purchaseId)
+      : user.purchases.find(x=>x.productId===p.id);
+    if (pu) {
+      const existing=state.reviewRequests.find(r=>r.purchaseId===pu.purchaseId);
+      if(!existing) {
+        sec.style.display="grid";
+        byId("reviewHint").textContent=`Solicita tu reseña para: ${pu.name}`;
+        sec.dataset.purchaseId=pu.purchaseId;
+      }
+    }
+  }
 
   byId("productModal").classList.add("open");
 }
 
-/* ═══════════════════════════════════════════
-   CHECKOUT
-═══════════════════════════════════════════ */
-function doCheckout() {
-  const user = currentUser();
-  if (!user) { toast("Inicia sesión para comprar"); switchTab("account"); return; }
-  if (!state.cart.length) { toast("Agrega al menos un producto"); return; }
+/* ════════════════════════════════════════════
+   REVIEW REQUEST SUBMIT
+════════════════════════════════════════════ */
+byId("submitReviewRequest").addEventListener("click", async ()=>{
+  const user=currentUser();
+  if(!user){toast("Inicia sesión para solicitar una reseña");return;}
+  const sec=byId("detailReviewSection");
+  const purchaseId=sec.dataset.purchaseId;
+  const text=byId("detailReviewText").value.trim();
+  const file=byId("detailReviewPhoto").files[0];
+  if(!text||!file){toast("Escribe un comentario y agrega una foto");return;}
+  const pu=user.purchases.find(x=>x.purchaseId===purchaseId);
+  if(!pu){toast("No se encontró la compra");return;}
 
-  const purchases = state.cart.map(p => ({
-    purchaseId: crypto.randomUUID(),
-    productId: p.id,
-    name: p.name, price: p.price, image: p.image,
-    date: new Date().toISOString()
-  }));
-  user.purchases = [...purchases, ...user.purchases];
-  saveUsers();
-
-  const subtotal = state.cart.reduce((s,p) => s+Number(p.price), 0);
-  const lines = [
-    "Hola, quiero comprar estos productos de Mercado Nova Premium:",
-    ...state.cart.map(p => `- ${p.name}: ${money.format(p.price)}`),
-    `Total: ${money.format(subtotal)}`,
-    `Cliente: ${user.publicName}`,
-    `Correo: ${user.email}`,
-    "Entiendo que la entrega es en persona en 2-4 días."
-  ];
-  window.open(`https://wa.me/${sellerPhone}?text=${encodeURIComponent(lines.join("\n"))}`, "_blank");
-  state.cart = []; saveCart(); renderAll();
-  toast(`¡Pedido enviado! ${purchases.length} reseña${purchases.length>1?"s":""} disponible${purchases.length>1?"s":""} en Mi Cuenta`);
-  switchTab("account");
-}
-
-/* ═══════════════════════════════════════════
-   EVENTS — CLICKS (delegation)
-═══════════════════════════════════════════ */
-document.addEventListener("click", async e => {
-  const t = e.target;
-
-  /* add to cart */
-  const addId = t.closest("[data-add]")?.dataset.add;
-  if (addId) {
-    e.stopPropagation();
-    const p = state.products.find(x => x.id === Number(addId));
-    if (!p) return;
-    state.cart.push({...p, cartId: crypto.randomUUID()});
-    saveCart(); renderCart(); toast("Agregado al carrito");
-    return;
-  }
-
-  /* remove from cart */
-  const removeId = t.closest("[data-remove]")?.dataset.remove;
-  if (removeId) {
-    state.cart = state.cart.filter(x => x.cartId !== removeId);
-    saveCart(); renderCart(); toast("Producto quitado del carrito");
-    return;
-  }
-
-  /* toggle favorite */
-  const favId = t.closest("[data-fav]")?.dataset.fav;
-  if (favId) {
-    e.stopPropagation();
-    const id = Number(favId);
-    if (state.favorites.includes(id)) {
-      state.favorites = state.favorites.filter(x => x !== id);
-      toast("Quitado de favoritos");
-    } else {
-      state.favorites.push(id);
-      toast("Agregado a favoritos ❤️");
-    }
-    saveFavs(); renderProducts(); renderFavorites();
-    return;
-  }
-
-  /* category filter */
-  const cat = t.closest("[data-category]")?.dataset.category;
-  if (cat) { state.category = cat; renderCategories(); renderProducts(); return; }
-
-  /* open product */
-  const openId = t.closest("[data-open-product]")?.dataset.openProduct;
-  if (openId) { openProduct(openId); return; }
-
-  /* open from purchase */
-  const purchaseId = t.closest("[data-open-purchase]")?.dataset.openPurchase;
-  if (purchaseId) {
-    const user = currentUser();
-    const pu = user?.purchases.find(x => x.purchaseId === purchaseId);
-    if (pu) openProduct(pu.productId, pu.purchaseId);
-    return;
-  }
-
-  /* thumb gallery */
-  const thumb = t.closest("[data-thumb]")?.dataset.thumb;
-  if (thumb) {
-    byId("detailMainImage").src = thumb;
-    document.querySelectorAll("[data-thumb]").forEach(img =>
-      img.classList.toggle("active", img.dataset.thumb === thumb));
-    return;
-  }
-
-  /* admin edit product */
-  const editId = t.closest("[data-edit]")?.dataset.edit;
-  if (editId) {
-    const p = state.products.find(x => x.id === Number(editId));
-    byId("productId").value = p.id;
-    byId("productName").value = p.name;
-    byId("productCategory").value = p.category;
-    byId("productPrice").value = p.price;
-    byId("productOldPrice").value = p.oldPrice || "";
-    byId("productBadge").value = p.badge || "";
-    byId("productDescription").value = p.description;
-    byId("productImage").value = p.image;
-    byId("productGallery").value = (p.gallery||[]).join("\n");
-    byId("asec-products").scrollTop = 0;
-    return;
-  }
-
-  /* admin delete product */
-  const deleteId = t.closest("[data-delete]")?.dataset.delete;
-  if (deleteId) {
-    state.products = state.products.filter(x => x.id !== Number(deleteId));
-    state.cart = state.cart.filter(x => x.id !== Number(deleteId));
-    saveCart(); await cloudSaveProducts(); renderAll(); toast("Producto quitado");
-    return;
-  }
-
-  /* admin delete category */
-  const delCat = t.closest("[data-delcat]")?.dataset.delcat;
-  if (delCat) {
-    const inUse = state.products.some(p => p.category === delCat);
-    if (inUse) { toast("No puedes eliminar una categoría con productos asignados"); return; }
-    state.categories = state.categories.filter(c => c !== delCat);
-    save(SK.categories, state.categories);
-    await cloudSaveCategories();
-    renderCategories(); renderAdminCategories();
-    toast("Categoría eliminada");
-    return;
-  }
-});
-
-/* ═══════════════════════════════════════════
-   FORMS
-═══════════════════════════════════════════ */
-byId("searchForm").addEventListener("submit", e => {
-  e.preventDefault();
-  state.query = byId("searchInput").value.trim();
-  renderProducts();
-});
-
-byId("checkoutButton").addEventListener("click", doCheckout);
-byId("checkoutButton2").addEventListener("click", doCheckout);
-
-byId("detailAdd").addEventListener("click", () => {
-  const p = state.products.find(x => x.id === Number(state.detailProductId));
-  if (!p) return;
-  state.cart.push({...p, cartId: crypto.randomUUID()});
-  saveCart(); renderCart(); toast("Agregado al carrito");
-});
-
-byId("detailReviewForm").addEventListener("submit", e => {
-  e.preventDefault();
-  const user = currentUser();
-  if (!user) { toast("Inicia sesión para dejar reseña"); return; }
-  const purchaseId = byId("detailReviewForm").dataset.purchaseId;
-  const purchase = user.purchases.find(x => x.purchaseId === purchaseId);
-  const already = user.reviews.some(r => r.purchaseId === purchaseId);
-  const file = byId("detailReviewPhoto").files[0];
-  if (!purchase || already || !file) { toast("Esta compra no tiene reseña disponible"); return; }
-  const reader = new FileReader();
-  reader.onload = () => {
-    user.reviews.unshift({
-      id: crypto.randomUUID(), purchaseId,
-      productId: state.detailProductId,
-      productName: purchase.name,
-      text: byId("detailReviewText").value.trim(),
-      photo: reader.result,
-      createdAt: new Date().toISOString()
-    });
-    saveUsers();
-    byId("detailReviewForm").reset();
-    renderAll(); openProduct(state.detailProductId);
-    toast("¡Reseña publicada!");
+  // Convert photo to base64
+  const reader=new FileReader();
+  reader.onload=async()=>{
+    try{
+      await addDoc(collection(db,"reviewRequests"),{
+        purchaseId,
+        productId: state.detailProductId,
+        productName: pu.name,
+        userEmail: user.email,
+        userName: user.publicName,
+        text,
+        photo: reader.result,
+        status: "pending",
+        createdAt: new Date().toISOString()
+      });
+      byId("detailReviewText").value="";
+      byId("detailReviewPhoto").value="";
+      sec.style.display="none";
+      toast("✅ Solicitud enviada. El vendedor la revisará pronto.");
+    }catch(e){console.error(e);toast("Error al enviar la solicitud");}
   };
   reader.readAsDataURL(file);
 });
 
-/* admin product form */
-byId("productForm").addEventListener("submit", async e => {
-  e.preventDefault();
-  const existId = Number(byId("productId").value);
-  const p = {
-    id: existId || Date.now(),
-    name: byId("productName").value.trim(),
-    category: byId("productCategory").value,
-    price: Number(byId("productPrice").value),
-    oldPrice: Number(byId("productOldPrice").value) || 0,
-    badge: byId("productBadge").value.trim() || "Nuevo",
-    description: byId("productDescription").value.trim(),
-    image: byId("productImage").value.trim(),
-    gallery: byId("productGallery").value.split("\n").map(s=>s.trim()).filter(Boolean)
-  };
-  state.products = existId
-    ? state.products.map(x => x.id===existId ? p : x)
-    : [p, ...state.products];
-  await cloudSaveProducts();
-  clearProductForm(); renderAll(); toast("Producto guardado");
-});
-
-byId("resetProductForm").addEventListener("click", clearProductForm);
-function clearProductForm() {
-  byId("productId").value = "";
-  byId("productForm").reset();
+/* ════════════════════════════════════════════
+   CHECKOUT
+════════════════════════════════════════════ */
+function doCheckout() {
+  const user=currentUser();
+  if(!user){toast("Inicia sesión para comprar");switchTab("account");return;}
+  if(!state.cart.length){toast("Agrega al menos un producto");return;}
+  const purchases=state.cart.map(p=>({
+    purchaseId:crypto.randomUUID(),productId:p.id,
+    name:p.name,price:p.price,image:p.image,
+    date:new Date().toISOString()
+  }));
+  user.purchases=[...purchases,...user.purchases];
+  saveUsers();
+  const sub=state.cart.reduce((s,p)=>s+Number(p.price),0);
+  const lines=[
+    "Hola, quiero comprar estos productos de Mercado Nova Premium:",
+    ...state.cart.map(p=>`- ${p.name}: ${fmt.format(p.price)}`),
+    `Total: ${fmt.format(sub)}`,
+    `Cliente: ${user.publicName}`,
+    `Correo: ${user.email}`,
+    "Entiendo que la entrega es en persona en 2-4 días."
+  ];
+  window.open(`https://wa.me/${SELLER}?text=${encodeURIComponent(lines.join("\n"))}`,"_blank");
+  state.cart=[]; saveCart(); renderAll();
+  toast("¡Pedido enviado! Puedes solicitar tus reseñas desde Mi Cuenta.");
+  switchTab("account");
 }
 
-/* admin category form */
-byId("categoryForm").addEventListener("submit", async e => {
-  e.preventDefault();
-  const name = byId("catName").value.trim();
-  if (!name) return;
-  if (state.categories.includes(name)) { toast("Esa categoría ya existe"); return; }
-  state.categories.push(name);
-  save(SK.categories, state.categories);
-  await cloudSaveCategories();
-  byId("catName").value = "";
-  renderCategories(); renderAdminCategories();
-  toast("Categoría agregada");
-});
+/* ════════════════════════════════════════════
+   DELEGATED CLICK EVENTS
+════════════════════════════════════════════ */
+document.addEventListener("click", async e=>{
+  const t=e.target;
 
-/* ═══════════════════════════════════════════
-   MISC BUTTONS
-═══════════════════════════════════════════ */
-byId("openInfo").addEventListener("click", () => byId("infoModal").classList.add("open"));
-byId("closeInfo").addEventListener("click", () => { save(SK.infoSeen,true); byId("infoModal").classList.remove("open"); });
-byId("acceptInfo").addEventListener("click", () => { save(SK.infoSeen,true); byId("infoModal").classList.remove("open"); });
-byId("closeProduct").addEventListener("click", () => byId("productModal").classList.remove("open"));
-byId("closeAdmin").addEventListener("click", () => byId("adminOverlay").classList.remove("open"));
+  // Add to cart
+  const addId=t.closest("[data-add]")?.dataset.add;
+  if(addId){e.stopPropagation();const p=state.products.find(x=>x.id===Number(addId));if(!p)return;state.cart.push({...p,cartId:crypto.randomUUID()});saveCart();renderCart();toast("Agregado al carrito");return;}
 
-/* ═══════════════════════════════════════════
-   ADMIN ACCESS
-═══════════════════════════════════════════ */
-function openAdmin() {
-  const pin = prompt("PIN del propietario");
-  if (pin === "micanal311") {
-    byId("adminOverlay").classList.add("open");
-    renderAdminProducts(); renderAdminCategories();
-  } else if (pin !== null) { toast("PIN incorrecto"); }
-}
-byId("ownerHotspot").addEventListener("click", openAdmin);
-document.addEventListener("keydown", e => {
-  if (e.ctrlKey && e.shiftKey && e.key.toLowerCase()==="a") openAdmin();
-});
-if (new URLSearchParams(location.search).get("admin")==="1") setTimeout(openAdmin, 300);
+  // Remove from cart
+  const removeId=t.closest("[data-remove]")?.dataset.remove;
+  if(removeId){state.cart=state.cart.filter(x=>x.cartId!==removeId);saveCart();renderCart();toast("Producto quitado");return;}
 
-/* ═══════════════════════════════════════════
-   INIT
-═══════════════════════════════════════════ */
-(async () => {
-  renderAll(); // show immediately with defaults/local data
+  // Toggle favorite
+  const favId=t.closest("[data-fav]")?.dataset.fav;
+  if(favId){e.stopPropagation();const id=Number(favId);if(state.favorites.includes(id)){state.favorites=state.favorites.filter(x=>x!==id);toast("Quitado de favoritos");}else{state.favorites.push(id);toast("Favorito agregado ❤️");}saveFavs();renderProducts();renderFavorites();return;}
 
-  const loaded = await cloudLoad();
-  if (loaded) {
-    renderAll();
-  } else {
-    await cloudSaveProducts();
-    await cloudSaveCategories();
+  // Category filter
+  const cat=t.closest("[data-category]")?.dataset.category;
+  if(cat){state.category=cat;renderCategories();renderProducts();return;}
+
+  // Open product
+  const openId=t.closest("[data-open-product]")?.dataset.openProduct;
+  if(openId){openProduct(openId);return;}
+
+  // Open from purchase
+  const purchaseId=t.closest("[data-open-purchase]")?.dataset.openPurchase;
+  if(purchaseId){const user=currentUser();const pu=user?.purchases.find(x=>x.purchaseId===purchaseId);if(pu)openProduct(pu.productId,pu.purchaseId);return;}
+
+  // Request review from purchase list
+  const reqRevId=t.closest("[data-request-review]")?.dataset.requestReview;
+  if(reqRevId){
+    const user=currentUser();const pu=user?.purchases.find(x=>x.purchaseId===reqRevId);
+    if(pu){openProduct(pu.productId,pu.purchaseId);}
+    return;
   }
 
-  if (!read(SK.infoSeen, false)) byId("infoModal").classList.add("open");
-})();
+  // Thumb gallery
+  const thumb=t.closest("[data-thumb]")?.dataset.thumb;
+  if(thumb){byId("detailMainImage").src=thumb;document.querySelectorAll("[data-thumb]").forEach(img=>img.classList.toggle("active",img.dataset.thumb===thumb));return;}
+
+  // Admin edit
+  const editId=t.closest("[data-edit]")?.dataset.edit;
+  if(editId){const p=state.products.find(x=>x.id===Number(editId));byId("productId").value=p.id;byId("productName").value=p.name;byId("productCategory").value=p.category;byId("productPrice").value=p.price;byId("productOldPrice").value=p.oldPrice||"";byId("productBadge").value=p.badge||"";byId("productDescription").value=p.description;byId("productImage").value=p.image;byId("productGallery").value=(p.gallery||[]).join("\n");return;}
+
+  // Admin delete product
+  const deleteId=t.closest("[data-delete]")?.dataset.delete;
+  if(deleteId){state.products=state.products.filter(x=>x.id!==Number(deleteId));state.cart=state.cart.filter(x=>x.id!==Number(deleteId));saveCart();await cloudSaveProducts();toast("Producto quitado");return;}
+
+  // Admin delete category
+  const delCat=t.closest("[data-delcat]")?.dataset.delcat;
+  if(delCat){if(state.products.some(p=>p.category===delCat)){toast("No puedes eliminar una categoría con productos asignados");return;}state.categories=state.categories.filter(c=>c!==delCat);save(SK.categories,state.categories);await cloudSaveCategories();renderCategories();renderAdminCategories();toast("Categoría eliminada");return;}
+
+  // Admin APPROVE review
+  const approveId=t.closest("[data-approve]")?.dataset.approve;
+  if(approveId){
+    try{
+      await updateDoc(doc(db,"reviewRequests",approveId),{status:"approved"});
+      toast("✅ Reseña aprobada y publicada en la tienda");
+    }catch(e){console.error(e);toast("Error al aprobar");}
+    return;
+  }
+
+  // Admin REJECT review
+  const rejectId=t.closest("[data-reject]")?.dataset.reject;
+  if(rejectId){
+    try{
+      await updateDoc(doc(db,"reviewRequests",rejectId),{status:"rejected"});
+      toast("❌ Reseña rechazada");
+    }catch(e){console.error(e);toast("Error al rechazar");}
+    return;
+  }
+
+  // Admin DELETE review request
+  const delReqId=t.closest("[data-delete-req]")?.dataset.deleteReq;
+  if(delReqId){
+    try{
+      await deleteDoc(doc(db,"reviewRequests",delReqId));
+      toast("Solicitud eliminada");
+    }catch(e){console.error(e);toast("Error al eliminar");}
+    return;
+  }
+});
+
+/* ════════════════════════════════════════════
+   FORMS
+════════════════════════════════════════════ */
+byId("searchForm").addEventListener("submit",e=>{e.preventDefault();state.query=byId("searchInput").value.trim();renderProducts();});
+byId("checkoutButton").addEventListener("click",doCheckout);
+byId("checkoutButton2").addEventListener("click",doCheckout);
+
+byId("detailAdd").addEventListener("click",()=>{
+  const p=state.products.find(x=>x.id===Number(state.detailProductId));
+  if(!p)return;state.cart.push({...p,cartId:crypto.randomUUID()});saveCart();renderCart();toast("Agregado al carrito");
+});
+
+byId("productForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const category = byId("productCategory").value;
+  if (!category) { toast("⚠️ Selecciona una categoría antes de guardar"); return; }
+  const existId=Number(byId("productId").value);
+  const p={
+    id:existId||Date.now(),
+    name:byId("productName").value.trim(),
+    category,
+    price:Number(byId("productPrice").value),
+    oldPrice:Number(byId("productOldPrice").value)||0,
+    badge:byId("productBadge").value.trim()||"Nuevo",
+    description:byId("productDescription").value.trim(),
+    image:byId("productImage").value.trim(),
+    gallery:byId("productGallery").value.split("\n").map(s=>s.trim()).filter(Boolean)
+  };
+  state.products=existId?state.products.map(x=>x.id===existId?p:x):[p,...state.products];
+  await cloudSaveProducts();
+  clearProductForm();toast("✅ Producto guardado (visible en todos los dispositivos)");
+});
+
+byId("resetProductForm").addEventListener("click",clearProductForm);
+function clearProductForm(){byId("productId").value="";byId("productForm").reset();}
+
+byId("categoryForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const name=byId("catName").value.trim();
+  if(!name)return;
+  if(state.categories.includes(name)){toast("Esa categoría ya existe");return;}
+  state.categories.push(name);save(SK.categories,state.categories);
+  await cloudSaveCategories();byId("catName").value="";
+  renderCategories();renderAdminCategories();repopulateCategorySelect();toast("Categoría agregada");
+});
+
+function fillBannerForm(b){
+  if(!b)return;
+  byId("bannerTitle").value   = b.title   || "";
+  byId("bannerDesc").value    = b.desc    || "";
+  byId("bannerBtn1").value    = b.btn1    || "";
+  byId("bannerBg").value      = b.bg      || "";
+  byId("bannerCardImg").value = b.cardImg || "";
+  byId("bannerCardTitle").value = b.cardTitle || "";
+  byId("bannerCardSub").value = b.cardSub || "";
+}
+
+byId("bannerForm").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const b = {
+    title:     byId("bannerTitle").value.trim(),
+    desc:      byId("bannerDesc").value.trim(),
+    btn1:      byId("bannerBtn1").value.trim()||"Ver productos",
+    bg:        byId("bannerBg").value.trim(),
+    cardImg:   byId("bannerCardImg").value.trim(),
+    cardTitle: byId("bannerCardTitle").value.trim(),
+    cardSub:   byId("bannerCardSub").value.trim(),
+  };
+  state.banner = b;
+  applyBanner(b);
+  await cloudSaveBanner();
+  toast("✅ Banner actualizado y visible para todos");
+});
+
+/* ════════════════════════════════════════════
+   MISC BUTTONS
+════════════════════════════════════════════ */
+byId("openInfo").addEventListener("click",()=>byId("infoModal").classList.add("open"));
+byId("closeInfo").addEventListener("click",()=>{save(SK.infoSeen,true);byId("infoModal").classList.remove("open");});
+byId("acceptInfo").addEventListener("click",()=>{save(SK.infoSeen,true);byId("infoModal").classList.remove("open");});
+byId("closeProduct").addEventListener("click",()=>byId("productModal").classList.remove("open"));
+byId("closeAdmin").addEventListener("click",()=>byId("adminOverlay").classList.remove("open"));
+
+/* ════════════════════════════════════════════
+   GOOGLE LOGIN
+════════════════════════════════════════════ */
+function doGoogle(){
+  const provider=new GoogleAuthProvider();
+  signInWithPopup(auth,provider).then(r=>{
+    const email=r.user.email.toLowerCase();
+    const publicName=r.user.displayName||"Usuario Premium";
+    state.users[email]=state.users[email]||{email,publicName,purchases:[],reviews:[]};
+    state.users[email].publicName=publicName;
+    state.currentEmail=email;save(SK.user,email);saveUsers();
+    renderAccount();toast(`¡Bienvenido, ${publicName}!`);
+  }).catch(e=>{console.error(e);toast("No se pudo iniciar sesión con Google");});
+}
+
+/* ════════════════════════════════════════════
+   ADMIN ACCESS
+════════════════════════════════════════════ */
+function openAdmin(){
+  const pin=prompt("PIN del propietario");
+  if(pin==="micanal311"){byId("adminOverlay").classList.add("open");renderAdminAll();}
+  else if(pin!==null){toast("PIN incorrecto");}
+}
+byId("ownerHotspot").addEventListener("click",openAdmin);
+document.addEventListener("keydown",e=>{if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()==="a")openAdmin();});
+if(new URLSearchParams(location.search).get("admin")==="1")setTimeout(openAdmin,300);
+
 </script>
 </body>
 </html>
